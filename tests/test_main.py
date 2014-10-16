@@ -16,7 +16,7 @@ class TestMainBase(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
 class TestMinimal(TestMainBase):
-    config_file = 'tests/configs/minimal.ini'
+    config_file = 'tests/configs/minimal.conf'
 
     def test_minimal(self):
         spiny.main.run(config_file=self.config_file)

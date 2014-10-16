@@ -44,3 +44,16 @@ def list_pythons_on_path(paths):
                     pythons[env] = {'python': python, 'version': version, 'path': fullpath}
 
     return pythons
+
+
+def verify_environment(conf, settings):
+    # Make sure we have the Python versions required:
+
+    env_list = [x.strip() for x in conf.get('spiny').get('environments').split(',')]
+    paths = os.environ['PATH'].split(os.pathsep)
+    pythons = list_pythons_on_path(paths)
+
+    for env in env_list:
+        if env not in pythons:
+            raise EnvironmentError('Could not find an executable for %s' % env)
+
