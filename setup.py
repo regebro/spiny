@@ -26,7 +26,7 @@ setup(
     url="https://github.com/regebro/spiny/",
     license='MIT',
     install_requires=[],
-    entry_points = {
+    entry_points={
         'console_scripts': [
             'spiny = spiny.main:main',
         ]

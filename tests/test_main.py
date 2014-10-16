@@ -5,6 +5,7 @@ import unittest
 
 import spiny.main
 
+
 class TestMainBase(unittest.TestCase):
 
     def setUp(self):
@@ -14,6 +15,7 @@ class TestMainBase(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
+
 
 class TestMinimal(unittest.TestCase):
     config_file = 'tests/configs/minimal.conf'
