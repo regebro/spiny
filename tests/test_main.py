@@ -15,7 +15,7 @@ class TestMainBase(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
-class TestMinimal(TestMainBase):
+class TestMinimal(unittest.TestCase):
     config_file = 'tests/configs/minimal.conf'
 
     def test_minimal(self):

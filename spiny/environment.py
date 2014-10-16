@@ -46,10 +46,10 @@ def list_pythons_on_path(paths):
     return pythons
 
 
-def verify_environment(conf, settings):
+def verify_environment(conf):
     # Make sure we have the Python versions required:
 
-    env_list = [x.strip() for x in conf.get('spiny').get('environments').split(',')]
+    env_list = [x.strip() for x in conf.get('spiny', 'environments').split(',')]
     paths = os.environ['PATH'].split(os.pathsep)
     pythons = list_pythons_on_path(paths)
 
