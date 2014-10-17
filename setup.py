@@ -11,11 +11,10 @@ setup(
     description='''Not yet''',
     long_description=long_desc,
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Operating System :: Unix",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.4",
         "Topic :: Software Development :: Testing",
         ],
     packages=find_packages(),

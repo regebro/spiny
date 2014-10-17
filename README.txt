@@ -30,3 +30,10 @@ And you can set up personal custom configs in ~/.config/spiny.conf::
 
 The above is an example of how to configure which Pythons you want to use.
 If you don't configure this, they have to be on the PATH.
+
+Things that desperately needs doing:
+
+  * Run it under Python 3
+  * Add more logging (and a verbose parameter)
+  * Make the tests run under itself
+  * Documentation
