@@ -79,6 +79,10 @@ class TestEnvironmentChecks(unittest.TestCase):
         self.assertNotIn('python4', pythons)
 
     # This is not currently useful
+    # The idea here is to make a test that exersizes the case when a Python install
+    # does not have a virtualenv installed, and can't be installed with the
+    # virtualenv that is installed with the python running the tests.
+    # I'm not sure how to set up such an environment reliably.
     #def test_external_virtualenv(self):
         #conf = make_conf()
         #conf.set('spiny', 'environments', 'python2 python3')

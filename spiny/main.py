@@ -33,6 +33,20 @@ def install_virtualenvs(envnames, pythons, venv_dir):
         # TODO: Log errors
         print(process.stdout.read())
 
+
+def run_commands(envnames, venv_dir, commands):
+    """Run a list of commands in each virtualenv"""
+    for envname in envnames:
+        envpath = os.path.join(venv_dir, envname)
+        python = os.path.join(envpath, 'bin', envname)
+        environment = {'environment': envpath,
+                       'python': python}
+
+        for command in commands:
+            command = command.format(**environment)
+            subprocess.call(command, shell=True)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Frabble the foo and the bars')
@@ -88,8 +102,14 @@ def run(config_file, overrides):
         venv_dir = '.venv'
     venv_dir = os.path.abspath(venv_dir)
     envs = config.get('spiny', 'environments').split()
-    # Run virtualenvs
     install_virtualenvs(envs, pythons, venv_dir)
 
     # Run commands
+    if not config.has_option('spiny', 'runtests'):
+        commands = ['{python} setup.py test']
+    else:
+        commands = config.get('spiny', 'runtests').splitlines()
 
+    run_commands(envs, venv_dir, commands)
+
+    # Done?

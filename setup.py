@@ -22,7 +22,7 @@ setup(
     include_package_data=True,
     zip_safe=True,
     author='Lennart Regebro',
-    author_email='laurence@lrowe.co.uk',
+    author_email='regebro@gmail.com',
     url="https://github.com/regebro/spiny/",
     license='MIT',
     install_requires=[],
