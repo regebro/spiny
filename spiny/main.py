@@ -3,24 +3,24 @@ import os
 import os.path
 
 from spiny import environment
-
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser
 
 
 def main():
     parser = argparse.ArgumentParser(
         description='Frabble the foo and the bars')
 
-    parser.add_argument('-c', action='store', nargs=1, default='spiny.conf',
-                        metavar='<filename>', type=file,
-                        help='The config file to use. Defaults to spiny.conf')
+    parser.add_argument(
+        '--config',
+        '-c',
+        action='store',
+        default='spiny.conf',
+        metavar='<filename>',
+        type=str,
+        help='The config file to use. Defaults "to spiny.conf"')
 
     args = parser.parse_args()
-
-    print args
+    run(args.config)
 
 
 def run(config_file):
@@ -41,5 +41,5 @@ def run(config_file):
 
     # Run virtualenvs.
     # Run the test commands
+    print config.items('spiny')
 
-    pass
