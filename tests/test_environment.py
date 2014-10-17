@@ -1,6 +1,6 @@
-import unittest
-import subprocess
 import os
+import subprocess
+import unittest
 
 from spiny import environment
 from .utils import TestEnvironment
@@ -27,24 +27,24 @@ class TestCustomPythons(unittest.TestCase):
         python2 = pythons['python2']
         conf = make_conf()
         conf.set('pythons', 'python2', python2['path'])
-        conf.set('spiny', 'environments', 'python2,python3')
+        conf.set('spiny', 'environments', 'python2 python3')
 
         with TestEnvironment(['python3']):
             # This environment has only Python 3 on the path, but a specific
             # Python 2 config, so it should still work:
-            environment.verify_environment(conf)
+            environment.get_pythons(conf)
 
 
 class TestEnvironmentChecks(unittest.TestCase):
 
     def test_pythons_exist(self):
         conf = make_conf()
-        conf.set('spiny', 'environments', 'python2,python3')
+        conf.set('spiny', 'environments', 'python2 python3')
 
         with TestEnvironment(['python2']) as env:
             self.assertRaises(EnvironmentError,
-                              environment.verify_environment,
+                              environment.get_pythons,
                               conf)
 
         with TestEnvironment(['python2', 'python3']) as env:
-            environment.verify_environment(conf)
+            environment.get_pythons(conf)

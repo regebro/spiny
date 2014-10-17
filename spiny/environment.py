@@ -2,9 +2,10 @@ import os
 import os.path
 import string
 import subprocess
+import sys
 
 
-def python_envs(fullpath):
+def python_info(fullpath):
     # Figure out the version
     process = subprocess.Popen([fullpath, '--version'],
                                stderr=subprocess.PIPE,
@@ -48,7 +49,7 @@ def list_pythons_on_path(path):
                 # We found this already
                 continue
 
-            python, version, envs = python_envs(fullpath)
+            python, version, envs = python_info(fullpath)
             for env in envs:
                 if env not in pythons:
                     pythons[env] = {'python': python,
@@ -58,11 +59,11 @@ def list_pythons_on_path(path):
     return pythons
 
 
-def verify_environment(conf):
+def get_pythons(conf):
     # Make sure we have the Python versions required:
 
     env_list = [x.strip() for x in
-                conf.get('spiny', 'environments').split(',')]
+                conf.get('spiny', 'environments').split()]
     path = os.environ['PATH']
     pythons = list_pythons_on_path(path)
 
@@ -72,13 +73,15 @@ def verify_environment(conf):
                 # Not executable
                 raise EnvironmentError( '%s is not executable' % path)
 
-            p, v, envs = python_envs(path)
+            p, v, envs = python_info(path)
             if python not in envs:
                 raise EnvironmentError(
                     'Executable %s is not the given version %s' % (path, python))
 
             # The given python is OK, add it to the python env:
-            pythons[python] = path
+            pythons[python] = {'python': p,
+                               'version': v,
+                               'path': path}
 
             # Add the other envs for this particular python, if they don't exist otherwise:
             for env in envs:
@@ -88,3 +91,27 @@ def verify_environment(conf):
     for env in env_list:
         if env not in pythons:
             raise EnvironmentError('Could not find an executable for %s' % env)
+
+        exepath = pythons[env]['path']
+        process = subprocess.Popen([exepath, '-m', 'virtualenv'],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+        process.wait()
+        if process.returncode == 1 or process.stderr.read():
+            # Something went wrong. Most likely there is no virtualenv module
+            # installed for this Python. Try with the current Python.
+            # TODO: log warnings
+            process = subprocess.Popen([sys.executable,
+                                        '-m', 'virtualenv',
+                                        '-p', exepath],
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            if process.returncode == 1 or process.stderr.read():
+                # That didn't work either.
+                raise EnvironmentError(
+                "The Python at %s does not have virtualenv installed, and the "
+                "virtualenv for %s could not install that Python version. "
+                "To solve this, install virtualenv for %s" % (
+                    exepath, sys.executable, exepath))
+
+    return pythons
