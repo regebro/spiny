@@ -71,7 +71,7 @@ def get_pythons(conf):
         for python, path in conf.items('pythons'):
             if not os.access(path, os.X_OK):
                 # Not executable
-                raise EnvironmentError( '%s is not executable' % path)
+                raise EnvironmentError('%s is not executable' % path)
 
             p, v, envs = python_info(path)
             if python not in envs:
@@ -109,10 +109,10 @@ def get_pythons(conf):
             if process.returncode == 1 or process.stderr.read():
                 # That didn't work either.
                 raise EnvironmentError(
-                "The Python at %s does not have virtualenv installed, and the "
-                "virtualenv for %s could not install that Python version. "
-                "To solve this, install virtualenv for %s" % (
-                    exepath, sys.executable, exepath))
+                    "The Python at %s does not have virtualenv installed, and the "
+                    "virtualenv for %s could not install that Python version. "
+                    "To solve this, install virtualenv for %s" % (
+                        exepath, sys.executable, exepath))
             else:
                 pythons[env]['virtualenv'] = 'external'
         else:

@@ -87,7 +87,8 @@ def run(config_file, overrides):
 
     for override in overrides:
         if ':' not in override or '=' not in override:
-            raise ValueError('%s is not a valid config variable. It should be "section:variable=value"')
+            raise ValueError('%s is not a valid config variable. '
+                             'It should be "section:variable=value"')
         section, rest = override.split(':', 1)
         option, value = rest.split('=', 1)
         config.set(section.strip(), option.strip(), value.strip())
