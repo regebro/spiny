@@ -25,3 +25,4 @@ class TestMinimal(TestMainBase):
                        overrides=['spiny:venv_dir=%s' % venv_dir])
         self.assertTrue(os.path.isdir(venv_dir),
                         "The .venv directory was not created")
+        self.assertListEqual(['python2.7'], os.listdir(venv_dir))

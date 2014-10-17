@@ -113,5 +113,9 @@ def get_pythons(conf):
                 "virtualenv for %s could not install that Python version. "
                 "To solve this, install virtualenv for %s" % (
                     exepath, sys.executable, exepath))
+            else:
+                pythons[env]['virtualenv'] = 'external'
+        else:
+            pythons[env]['virtualenv'] = 'internal'
 
     return pythons

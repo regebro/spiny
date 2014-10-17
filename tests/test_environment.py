@@ -16,8 +16,10 @@ class TestTestEnvironment(unittest.TestCase):
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
             self.assertRaises(OSError,
-                              subprocess.call,
-                              ['python3', '--version'])
+                              subprocess.Popen,
+                              ['python3', '--version'],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE                              )
 
 
 class TestCustomPythons(unittest.TestCase):

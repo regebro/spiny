@@ -2,18 +2,36 @@ import argparse
 import os
 import os.path
 import subprocess
+import sys
 
 from spiny import environment
 from ConfigParser import ConfigParser
 
 
-def install_virtualenv(envname, envdict, venv_dir):
+def install_virtualenvs(envnames, pythons, venv_dir):
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
 
-    exepath = envdict['path']
-    #subprocess.Popen([exepath, '-m', 'virtualenv', os.path.join(venv_dir, envname)])
+    processes = []
+    for envname in envnames:
+        envdict = pythons[envname]
+        exepath = envdict['path']
+        envpath = os.path.join(venv_dir, envname)
 
+        if envdict['virtualenv'] == 'internal':
+            command = [exepath, '-m', 'virtualenv', envpath]
+        else:
+            command = [sys.executable, '-m', 'virtualenv',
+                       '-p', exepath, envpath]
+
+        processes.append(subprocess.Popen(command,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE))
+
+    for process in processes:
+        process.wait()
+        # TODO: Log errors
+        print(process.stdout.read())
 
 def main():
     parser = argparse.ArgumentParser(
@@ -69,10 +87,8 @@ def run(config_file, overrides):
     else:
         venv_dir = '.venv'
     venv_dir = os.path.abspath(venv_dir)
-    for env in config.get('spiny', 'environments').split():
-        # Run virtualenvs
-        install_virtualenv(env, pythons[env], venv_dir)
+    envs = config.get('spiny', 'environments').split()
+    # Run virtualenvs
+    install_virtualenvs(envs, pythons, venv_dir)
 
-    # Run the test commands
-    print config.items('spiny')
-
+    # Run commands
