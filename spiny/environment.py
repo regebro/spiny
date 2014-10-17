@@ -6,7 +6,7 @@ import sys
 
 
 def python_info(fullpath):
-    # Figure out the version
+    # Figure out the version of the Python exe
     process = subprocess.Popen([fullpath, '--version'],
                                stderr=subprocess.PIPE,
                                stdout=subprocess.PIPE)
@@ -16,6 +16,7 @@ def python_info(fullpath):
     python, version = version_info.split()
     version_tuple = version.split('.')
 
+    # Return all valid environment names
     environment1 = '%s%s' % (python.lower(), version_tuple[0])
     environment2 = '%s.%s' % (environment1, version_tuple[1])
     environment3 = '%s.%s' % (environment2, version_tuple[2])

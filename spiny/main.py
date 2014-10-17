@@ -19,8 +19,10 @@ def install_virtualenvs(envnames, pythons, venv_dir):
         envpath = os.path.join(venv_dir, envname)
 
         if envdict['virtualenv'] == 'internal':
+            # Internal means use the virtualenv for the relevant Python
             command = [exepath, '-m', 'virtualenv', envpath]
         else:
+            # External means use the virtualenv for the current Python
             command = [sys.executable, '-m', 'virtualenv',
                        '-p', exepath, envpath]
 
@@ -49,7 +51,7 @@ def run_commands(envnames, venv_dir, commands):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Frabble the foo and the bars')
+        description='Run tests under several Python versions')
 
     parser.add_argument(
         '--config',
