@@ -19,7 +19,6 @@ class TestEnvironment(object):
 
     def __enter__(self):
         self.test_dir = tempfile.mkdtemp()
-        os.chdir(self.test_dir)
         self.old_path = os.environ['PATH']
         os.environ['PATH'] = self.test_dir
         self.old_home = os.environ['HOME']
@@ -27,6 +26,7 @@ class TestEnvironment(object):
         for env in self.env_list:
             path = self.pythons[env]['path']
             os.symlink(path, os.path.join(self.test_dir, env))
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         shutil.rmtree(self.test_dir)

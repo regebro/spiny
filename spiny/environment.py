@@ -45,7 +45,7 @@ def list_pythons_on_path(path):
                 # Not executable
                 continue
 
-            if fullpath in pythons.values():
+            if fullpath in [x['path'] for x in pythons.values()]:
                 # We found this already
                 continue
 

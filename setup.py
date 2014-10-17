@@ -11,7 +11,7 @@ setup(
     description='''Not yet''',
     long_description=long_desc,
     classifiers=[
-        "Development Status :: 1 - Planning",
+        "Development Status :: 2 - Pre-Alpha",
         "Operating System :: Unix",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
