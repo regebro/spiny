@@ -8,6 +8,8 @@ CHANGES
 
 - Regard more virtualenv tests as failures.
 
+- Return 1 if not all tests succeeded.
+
 
 0.1.1 (2014-10-18)
 ------------------

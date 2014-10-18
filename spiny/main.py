@@ -81,7 +81,7 @@ def main():
              'Example: "spiny:venv_dir=.venv"')
 
     args = parser.parse_args()
-    run(args.config, args.configvar)
+    return run(args.config, args.configvar)
 
 
 def run(config_file, overrides):
@@ -131,3 +131,5 @@ def run(config_file, overrides):
             print("ERROR: Running tests under %s failed!" % env)
         else:
             print("       Running tests under %s suceeded." % env)
+
+    return 1 if any(results.values()) else 0
