@@ -38,15 +38,24 @@ def install_virtualenvs(envnames, pythons, venv_dir):
 
 def run_commands(envnames, venv_dir, commands):
     """Run a list of commands in each virtualenv"""
+
+    results = {}
     for envname in envnames:
         envpath = os.path.join(venv_dir, envname)
         python = os.path.join(envpath, 'bin', envname)
         environment = {'environment': envpath,
                        'python': python}
 
+        fail = False
         for command in commands:
             command = command.strip().format(**environment)
-            subprocess.call(command, shell=True)
+            result = subprocess.call(command, shell=True)
+            if result != 0:
+                fail = True
+                break
+
+        results[envname] = fail
+    return results
 
 
 def main():
@@ -114,6 +123,11 @@ def run(config_file, overrides):
     else:
         commands = config.get('spiny', 'test_commands').splitlines()
 
-    run_commands(envs, venv_dir, commands)
+    results = run_commands(envs, venv_dir, commands)
 
-    # Done?
+    # Done
+    for env in envs:
+        if results[env]:
+            print("ERROR: Running tests under %s failed!" % env)
+        else:
+            print("       Running tests under %s suceeded." % env)

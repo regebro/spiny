@@ -4,6 +4,8 @@ CHANGES
 0.2 (unreleased)
 ----------------
 
+- Now prints a summary in the end.
+
 - Regard more virtualenv tests as failures.
 
 
