@@ -34,7 +34,7 @@ Configuration file
 ------------------
 
 The configuration file for Spiny is by default called
-Here is an example config, typically called spiny.conf::
+Here is an example config, typically called ``spiny.conf``::
 
   [spiny]
   environments = python2.7
@@ -45,11 +45,11 @@ Here is an example config, typically called spiny.conf::
 
   test_commands = {python} setup.py test
 
-The only required option in the configuration file is the `environments` option.
+The only required option in the configuration file is the ``environments`` option.
 
 You can have several lines of commands in test_commands.
 
-You can also set up a personal custom config in `~/.config/spiny.conf`::
+You can also set up a personal custom config in ``~/.config/spiny.conf``::
 
   [pythons]
   python2.6 = /pythons/python26/bin/python
@@ -60,10 +60,10 @@ You can also set up a personal custom config in `~/.config/spiny.conf`::
 The above is an example of how to configure which Pythons you want to use.
 If you don't configure this, they have to be on the PATH.
 
-You can in fact also add the `[pythons]` section in your projects spiny.conf,
+You can in fact also add the ``[pythons]`` section in your projects ``spiny.conf``,
 but the usecase for that is very limited. Possibly if you are using custom
-Pythons in your project. You can also add a `[spiny]` section to your personal
-`spiny.conf`, but that is not likely to be useful.
+Pythons in your project. You can also add a ``[spiny]`` section to your personal
+``spiny.conf``, but that is not likely to be useful.
 
 Todo
 ----
