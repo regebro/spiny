@@ -67,6 +67,7 @@ def main():
         action='store',
         type=str,
         nargs='*',
+        metavar='<configvar>',
         help='Override a config variable by "section:variable=value" '
              'Example: "spiny:venv_dir=.venv"')
 

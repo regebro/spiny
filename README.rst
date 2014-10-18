@@ -17,12 +17,12 @@ and it does not always call setup.py.
 Command line parameters
 -----------------------
 
-  usage: spiny [-h] [--config <filename>] [configvar [configvar ...]]
+  usage: spiny [-h] [--config <filename>] [<configvar> [<configvar> ...]]
 
   Run tests under several Python versions
 
   positional arguments:
-    configvar             Override a config variable by "section:variable=value"
+    <configvar>           Override a config variable by "section:variable=value"
                           Example: "spiny:venv_dir=.venv"
 
   optional arguments:
