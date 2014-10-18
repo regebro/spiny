@@ -76,3 +76,5 @@ Things that desperately needs doing:
   * Add more logging (and a verbose parameter)
 
   * Make the tests run under itself
+
+  * Makre tests run in parallell
