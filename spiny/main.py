@@ -45,7 +45,7 @@ def run_commands(envnames, venv_dir, commands):
                        'python': python}
 
         for command in commands:
-            command = command.format(**environment)
+            command = command.strip().format(**environment)
             subprocess.call(command, shell=True)
 
 
@@ -85,7 +85,7 @@ def run(config_file, overrides):
     settings_file = os.path.join(home, '.config', 'spiny.conf')
 
     config = ConfigParser()
-    config.read([config_file, settings_file])
+    config.read([settings_file, config_file])
 
     for override in overrides:
         if ':' not in override or '=' not in override:
@@ -108,10 +108,10 @@ def run(config_file, overrides):
     install_virtualenvs(envs, pythons, venv_dir)
 
     # Run commands
-    if not config.has_option('spiny', 'runtests'):
+    if not config.has_option('spiny', 'test_commands'):
         commands = ['{python} setup.py test']
     else:
-        commands = config.get('spiny', 'runtests').splitlines()
+        commands = config.get('spiny', 'test_commands').splitlines()
 
     run_commands(envs, venv_dir, commands)
 
