@@ -107,7 +107,11 @@ def get_pythons(conf):
                                         '-p', exepath],
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
-            if process.returncode == 1 or process.stderr.read():
+            process.wait()
+            # Different versions of virtualenv seem to deal with this error
+            # slightly differently. Test for all of it.
+            if (process.returncode in [1, 101] or process.stderr.read() or
+                'ERROR:' in process.stdout.read()):
                 # That didn't work either.
                 raise EnvironmentError(
                     "The Python at %s does not have virtualenv installed, and the "
