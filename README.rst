@@ -30,8 +30,8 @@ Command line parameters
     --config <filename>, -c <filename>
                           The config file to use. Defaults "to spiny.conf"
 
-Configuration file
-------------------
+Configuration files
+-------------------
 
 The configuration file for Spiny is by default called
 Here is an example config, typically called ``spiny.conf``::
@@ -46,6 +46,7 @@ Here is an example config, typically called ``spiny.conf``::
   test_commands = {python} setup.py test
 
 The only required option in the configuration file is the ``environments`` option.
+The other options will default to the values above.
 
 You can have several lines of commands in test_commands.
 
