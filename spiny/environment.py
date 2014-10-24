@@ -1,8 +1,19 @@
 import os
 import os.path
+import re
 import string
 import subprocess
 import sys
+
+PYTHON_RE = re.compile(b'''Programming Language :: Python :: (.*?)['"]''')
+
+
+def get_environments(conf):
+    if conf.has_option('spiny', 'environments'):
+        return conf.get('spiny', 'environments').split()
+
+    with open('setup.py', 'rb') as setuppy:
+        return ['python' + version for version in PYTHON_RE.findall(setuppy.read())]
 
 
 def python_info(fullpath):
@@ -63,8 +74,8 @@ def list_pythons_on_path(path):
 def get_pythons(conf):
     # Make sure we have the Python versions required:
 
-    env_list = [x.strip() for x in
-                conf.get('spiny', 'environments').split()]
+    env_list = get_environments(conf)
+
     path = os.environ['PATH']
     pythons = list_pythons_on_path(path)
 

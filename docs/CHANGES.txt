@@ -10,6 +10,15 @@ CHANGES
 
 - Return 1 if not all tests succeeded.
 
+- Fall back to setup.cfg is there is no spiny config file.
+
+- Renamed spiny.conf to spiny.cfg for consistency.
+
+- Made the configuration file optional.
+
+- Spony will now grep setup.py for Python version classifiers if no
+  environment configuration is found.
+
 
 0.1.1 (2014-10-18)
 ------------------

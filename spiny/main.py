@@ -66,10 +66,10 @@ def main():
         '--config',
         '-c',
         action='store',
-        default='spiny.conf',
+        default='spiny.cfg',
         metavar='<filename>',
         type=str,
-        help='The config file to use. Defaults "to spiny.conf"')
+        help='The config file to use. Defaults "to spiny.cfg"')
 
     parser.add_argument(
         'configvar',
@@ -84,6 +84,7 @@ def main():
     return run(args.config, args.configvar)
 
 
+
 def run(config_file, overrides):
     # Parse the config files
     if 'HOME' in os.environ:
@@ -92,10 +93,10 @@ def run(config_file, overrides):
         home = '~'
 
     # User settings
-    settings_file = os.path.join(home, '.config', 'spiny.conf')
+    settings_file = os.path.join(home, '.config', 'spiny.cfg')
 
     config = ConfigParser()
-    config.read([settings_file, config_file])
+    config.read([settings_file, config_file, 'setup.cfg'])
 
     for override in overrides:
         if ':' not in override or '=' not in override:
@@ -114,7 +115,7 @@ def run(config_file, overrides):
     else:
         venv_dir = '.venv'
     venv_dir = os.path.abspath(venv_dir)
-    envs = config.get('spiny', 'environments').split()
+    envs = environment.get_environments(config)
     install_virtualenvs(envs, pythons, venv_dir)
 
     # Run commands
