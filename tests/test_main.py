@@ -48,5 +48,5 @@ class TestDual(TestMainBase):
         spiny.main.main()
         self.assertTrue(os.path.isdir(venv_dir),
                         "The .venv directory was not created")
-        self.assertListEqual(['python3', 'python2'], os.listdir(venv_dir))
+        self.assertItemsEqual(['python3', 'python2'], os.listdir(venv_dir))
 

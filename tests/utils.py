@@ -11,9 +11,12 @@ class TestEnvironment(object):
     def __init__(self, env_list):
         self.env_list = env_list
         path = os.environ['PATH']
-        self.pythons = spiny.environment.list_pythons_on_path(path)
+        pythons = spiny.environment.list_pythons_on_path(path)
+        envs_on_path = [spiny.environment.python_info(x)[2] for x in pythons]
+        envs_on_path = sum(envs_on_path, [])
+
         for env in self.env_list:
-            if env not in self.pythons:
+            if env not in envs_on_path:
                 raise EnvironmentError("You must have %s installed and "
                                        "on the path to run the tests." % env)
 
