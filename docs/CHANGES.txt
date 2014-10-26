@@ -16,8 +16,13 @@ CHANGES
 
 - Made the configuration file optional.
 
-- Spony will now grep setup.py for Python version classifiers if no
+- Spiny will now grep setup.py for Python version classifiers if no
   environment configuration is found.
+
+- If both Python X and Python X.Y is given as environments, it will
+  skip the tests for Python X, seeing as it is fulfilled by Python X.Y.
+
+- The version specified in the [pythons] section now have preference.
 
 
 0.1.1 (2014-10-18)

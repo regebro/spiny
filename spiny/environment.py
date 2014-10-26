@@ -10,10 +10,14 @@ PYTHON_RE = re.compile(b'''Programming Language :: Python :: (.*?)['"]''')
 
 def get_environments(conf):
     if conf.has_option('spiny', 'environments'):
-        return conf.get('spiny', 'environments').split()
+        environments = conf.get('spiny', 'environments').split()
 
     with open('setup.py', 'rb') as setuppy:
-        return ['python' + version for version in PYTHON_RE.findall(setuppy.read())]
+        environments = ['python' + version for version in PYTHON_RE.findall(setuppy.read())]
+
+    # If "Python X" is specified and "Python X.Y" is also specified, skip "Python X"
+    return [e for e in environments if not any([x.startswith(e) and len(x) >
+                                                len( e) for x in environments])]
 
 
 def python_info(fullpath):
@@ -61,24 +65,13 @@ def list_pythons_on_path(path):
                 # We found this already
                 continue
 
-            python, version, envs = python_info(fullpath)
-            for env in envs:
-                if env not in pythons:
-                    pythons[env] = {'python': python,
-                                    'version': version,
-                                    'path': fullpath}
-
-    return pythons
+            yield fullpath
 
 
 def get_pythons(conf):
+    pythons = {}
+
     # Make sure we have the Python versions required:
-
-    env_list = get_environments(conf)
-
-    path = os.environ['PATH']
-    pythons = list_pythons_on_path(path)
-
     if conf.has_section('pythons'):
         for python, path in conf.items('pythons'):
             if not os.access(path, os.X_OK):
@@ -95,11 +88,25 @@ def get_pythons(conf):
                                'version': v,
                                'path': path}
 
-            # Add the other envs for this particular python, if they don't exist otherwise:
+            # Add the other envs for this particular python, if this is a higher version:
             for env in envs:
-                if env not in pythons:
-                    pythons[env] = path
+                if env not in pythons or pythons[env]['version'] < v:
+                    pythons[env] = {'python': p,
+                                    'version': v,
+                                    'path': path}
 
+    # Add the Python versions in the path for versions that are not specified:
+    path = os.environ['PATH']
+    for fullpath in list_pythons_on_path(path):
+
+        python, version, envs = python_info(fullpath)
+        for env in envs:
+            if env not in pythons:
+                pythons[env] = {'python': python,
+                                'version': version,
+                                'path': fullpath}
+
+    env_list = get_environments(conf)
     for env in env_list:
         if env not in pythons:
             raise EnvironmentError('Could not find an executable for %s' % env)
