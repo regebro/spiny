@@ -24,6 +24,9 @@ CHANGES
 
 - The version specified in the [pythons] section now have preference.
 
+- Setting a config option from the command line now works even if the section
+  doesn't exist.
+
 
 0.1.1 (2014-10-18)
 ------------------

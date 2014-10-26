@@ -104,6 +104,8 @@ def run(config_file, overrides):
                              'It should be "section:variable=value"')
         section, rest = override.split(':', 1)
         option, value = rest.split('=', 1)
+        if not config.has_section(section):
+            config.add_section(section)
         config.set(section.strip(), option.strip(), value.strip())
 
     # Get the verified environments

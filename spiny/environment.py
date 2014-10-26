@@ -11,9 +11,9 @@ PYTHON_RE = re.compile(b'''Programming Language :: Python :: (.*?)['"]''')
 def get_environments(conf):
     if conf.has_option('spiny', 'environments'):
         environments = conf.get('spiny', 'environments').split()
-
-    with open('setup.py', 'rb') as setuppy:
-        environments = ['python' + version for version in PYTHON_RE.findall(setuppy.read())]
+    else:
+        with open('setup.py', 'rb') as setuppy:
+            environments = ['python' + version for version in PYTHON_RE.findall(setuppy.read())]
 
     # If "Python X" is specified and "Python X.Y" is also specified, skip "Python X"
     return [e for e in environments if not any([x.startswith(e) and len(x) >
