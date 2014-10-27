@@ -38,11 +38,11 @@ class TestEnvironmentChecks(unittest.TestCase):
             environment.get_pythons(conf)
 
     def test_custom_pythons(self):
-        pythons = environment.list_pythons_on_path(os.environ['PATH'])
-        python2 = pythons['python2']
         conf = make_conf()
-        conf.set('pythons', 'python2', python2['path'])
         conf.set('spiny', 'environments', 'python2 python3')
+        pythons = environment.get_pythons(conf)
+        python2 = pythons['python2']
+        conf.set('pythons', 'python2', python2['path'])
 
         with TestEnvironment(['python3']):
             # This environment has only Python 3 on the path, but a specific
@@ -57,11 +57,11 @@ class TestEnvironmentChecks(unittest.TestCase):
         self.assertRaises(EnvironmentError, environment.get_pythons, conf)
 
     def test_custom_python_version(self):
-        pythons = environment.list_pythons_on_path(os.environ['PATH'])
-        python2 = pythons['python2']
         conf = make_conf()
-        conf.set('pythons', 'python2.2', python2['path'])
         conf.set('spiny', 'environments', 'python2 python3')
+        pythons = environment.get_pythons(conf)
+        python2 = pythons['python2']
+        conf.set('pythons', 'python2.2', python2['path'])
 
         self.assertRaises(EnvironmentError, environment.get_pythons, conf)
 
