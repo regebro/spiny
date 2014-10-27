@@ -27,6 +27,10 @@ CHANGES
 - Setting a config option from the command line now works even if the section
   doesn't exist.
 
+- Spiny will now attempt to extract the test requirements and install them
+  into the virtualenv before running the tests, to avoid polluting the
+  project directory with .egg directories.
+
 
 0.1.1 (2014-10-18)
 ------------------

@@ -4,15 +4,24 @@ import os.path
 import subprocess
 import sys
 
-from spiny import environment
+from spiny import environment, projectdata
 from ConfigParser import ConfigParser
 
 
 def install_virtualenvs(envnames, pythons, venv_dir):
+    project_data = projectdata.get_data('.')
+
+    requirements = []
+    requirements.extend(project_data.get('install_requires', []))
+    requirements.extend(project_data.get('setup_requires', []))
+    requirements.extend(project_data.get('tests_require', []))
+    requirements.extend(project_data.get('extras_require', {}).get('tests', []))
+
+    dependency_links = project_data.get('dependency_links', [])
+
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
 
-    processes = []
     for envname in envnames:
         envdict = pythons[envname]
         exepath = envdict['path']
@@ -26,15 +35,27 @@ def install_virtualenvs(envnames, pythons, venv_dir):
             command = [sys.executable, '-m', 'virtualenv',
                        '-p', exepath, envpath]
 
-        processes.append(subprocess.Popen(command,
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.PIPE))
-
-    for process in processes:
+        process = subprocess.Popen(command,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
         process.wait()
-        # TODO: Log errors
+        # TODO: Log errors, make output levels configurable
         print(process.stdout.read())
 
+        # Install dependencies:
+        pip_path = os.path.join(envpath, 'bin', 'pip')
+        parameters = '-f '.join(dependency_links).split()
+        if envname < 'python2.6': # Using 2.5 or worse
+            parameters.append('--insecure')
+
+        command = [pip_path] + parameters + ['install'] + requirements
+
+        process = subprocess.Popen(command,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+        process.wait()
+        # TODO: Log errors, make output levels configurable
+        print(process.stdout.read())
 
 def run_commands(envnames, venv_dir, commands):
     """Run a list of commands in each virtualenv"""
