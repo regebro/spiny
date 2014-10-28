@@ -6,6 +6,10 @@ CHANGES
 
 - Now runs under Python 3.
 
+- All output is now through logging, which enables you to select verbosity.
+
+- Added --version, --verbose and --quiet options.
+
 
 0.2 (2014-10-27)
 ----------------

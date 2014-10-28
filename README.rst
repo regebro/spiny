@@ -74,8 +74,6 @@ Things that desperately needs doing:
 
   * Run it under PyPy, IronPython, Jython.
 
-  * Add more logging (and a verbose parameter)
-
   * Make the tests run under itself
 
   * Make tests run in parallell

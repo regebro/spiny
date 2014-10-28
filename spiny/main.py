@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import os.path
 import pkg_resources
@@ -12,6 +13,59 @@ except ImportError:
     from configparser import ConfigParser
 
 __version__ = pkg_resources.require("spiny")[0].version
+
+logger = logging.getLogger('spiny')
+
+class Filter(object):
+    """Only log messages that are non-empty."""
+
+    def filter(self, record):
+        return len(record.msg)
+
+
+class LevelFormatter(logging.Formatter):
+    """Formatter with a format per level"""
+    def __init__(self, fmt=None, datefmt=None, level_formats=None):
+        super(LevelFormatter, self).__init__(fmt, datefmt)
+        if level_formats is None:
+            level_formats = {}
+        self._level_formats = level_formats
+        self._default_format = fmt
+
+    def format(self, record):
+        self._fmt = self._level_formats.get(record.levelno, self._default_format)
+        return super(LevelFormatter, self).format(record)
+
+
+def setup_logging(verbose, quiet):
+
+    verbosity = 2
+    if verbose is not None:
+        verbosity += verbose
+    if quiet is not None:
+        verbosity -= quiet
+
+    verbosity = max((0, min(4, verbosity)))
+    level = 50-(10*verbosity)
+
+    # The levels can be:
+    # 50: Only used for "Oups I failed" messages. -qq
+    # 40: Quiet level. Should be used only by the final status message. -q
+    # 30: Normal level. "I'm doing this now". Unexpected stderr outputs.
+    # 20: Verbose level. All outputs, except when probing. -v
+    # 10: Debug level. All outputs, detailed messages. -vv
+    # As you notice, these correspone to the logging modules levels
+    # CRITICAL, ERROR, WARNING, INFO and DEBUG, but those names
+    # don't fit well here. Also, we want different formatting for
+    # different levels. So:
+    handler = logging.StreamHandler()
+    handler.addFilter(Filter())
+    formats = {30: '%(message)s', 40: '%(message)s'}
+    handler.setFormatter(LevelFormatter('%(levelname)s:\n%(message)s',
+                                        level_formats=formats))
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
 
 def install_virtualenvs(envnames, pythons, venv_dir):
     project_data = projectdata.get_data('.')
@@ -27,6 +81,7 @@ def install_virtualenvs(envnames, pythons, venv_dir):
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
 
+    results = {}
     for envname in envnames:
         envdict = pythons[envname]
         exepath = envdict['path']
@@ -40,6 +95,8 @@ def install_virtualenvs(envnames, pythons, venv_dir):
             command = [sys.executable, '-m', 'virtualenv',
                        '-p', exepath, envpath]
 
+        logger.log(30, 'Install/update virtualenv for %s' %  envname)
+        logger.log(10, 'Using command: %s' %  ' '.join(command))
         process = subprocess.Popen(command,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
@@ -47,17 +104,23 @@ def install_virtualenvs(envnames, pythons, venv_dir):
         stdout = process.stdout.read()
         process.stderr.close()
         process.stdout.close()
-        # TODO: Log errors, make output levels configurable
-        print(stdout)
+        logger.log(30, stderr)
+        logger.log(20, stdout)
+        if process.wait() != 0:
+            # This failed somehow
+            results[envname] = process.wait()
+            logger.log(30, "Installing/updating virtualenv for %s failed!" % envname)
+            continue
 
         # Install dependencies:
         pip_path = os.path.join(envpath, 'bin', 'pip')
         parameters = '-f '.join(dependency_links).split()
-        if envname < 'python2.6': # Using 2.5 or worse
+        if envdict['python'] == 'Python' and envdict['version'] < '2.6': # Using 2.5 or worse
             parameters.append('--insecure')
 
         command = [pip_path] + parameters + ['install'] + requirements
 
+        logger.log(10, 'Install dependencies with command: %s' %  ' '.join(command))
         process = subprocess.Popen(command,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
@@ -65,8 +128,15 @@ def install_virtualenvs(envnames, pythons, venv_dir):
         stdout = process.stdout.read()
         process.stderr.close()
         process.stdout.close()
-        # TODO: Log errors, make output levels configurable
-        print(stdout)
+        logger.log(30, stderr)
+        logger.log(20, stdout)
+        if process.wait() != 0:
+            # This failed somehow
+            results[envname] = process.wait()
+            logger.log(30, "Installing/updating virtualenv for %s failed!" % envname)
+            continue
+
+    return results
 
 
 def run_commands(envnames, venv_dir, commands):
@@ -74,6 +144,7 @@ def run_commands(envnames, venv_dir, commands):
 
     results = {}
     for envname in envnames:
+        logger.log(30, 'Running tests for %s' %  envname)
         envpath = os.path.join(venv_dir, envname)
         python = os.path.join(envpath, 'bin', envname)
         environment = {'environment': envpath,
@@ -82,8 +153,17 @@ def run_commands(envnames, venv_dir, commands):
         fail = False
         for command in commands:
             command = command.strip().format(**environment)
-            result = subprocess.call(command, shell=True)
-            if result != 0:
+            logger.log(10, 'Using command: %s' %  command)
+            process = subprocess.Popen(command.split(),
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            stderr = process.stderr.read()
+            stdout = process.stdout.read()
+            process.stderr.close()
+            process.stdout.close()
+            logger.log(30, stderr)
+            logger.log(30, stdout)
+            if process.wait() != 0:
                 fail = True
                 break
 
@@ -148,8 +228,10 @@ def main():
              'Example: "spiny:venv_dir=.venv"')
 
     args = parser.parse_args()
-    return run(args.config, args.configvar)
 
+    setup_logging(args.verbose, args.quiet)
+
+    return run(args.config, args.configvar)
 
 
 def run(config_file, overrides):
@@ -185,7 +267,11 @@ def run(config_file, overrides):
         venv_dir = '.venv'
     venv_dir = os.path.abspath(venv_dir)
     envs = environment.get_environments(config)
-    install_virtualenvs(envs, pythons, venv_dir)
+
+    results = install_virtualenvs(envs, pythons, venv_dir)
+
+    # Filter out environments whose virtualenv failed.
+    envs = [env for env in envs if env not in results]
 
     # Run commands
     if not config.has_option('spiny', 'test_commands'):
@@ -193,13 +279,13 @@ def run(config_file, overrides):
     else:
         commands = config.get('spiny', 'test_commands').splitlines()
 
-    results = run_commands(envs, venv_dir, commands)
+    results.update(run_commands(envs, venv_dir, commands))
 
     # Done
     for env in envs:
         if results[env]:
-            print("ERROR: Running tests under %s failed!" % env)
+            logger.log(40, "ERROR: Running tests under %s failed!" % env)
         else:
-            print("       Running tests under %s suceeded." % env)
+            logger.log(40, "       Running tests under %s suceeded." % env)
 
     return 1 if any(results.values()) else 0

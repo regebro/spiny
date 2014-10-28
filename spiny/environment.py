@@ -1,3 +1,4 @@
+import logging
 import os
 import os.path
 import re
@@ -7,6 +8,7 @@ import sys
 
 PYTHON_RE = re.compile(b'''Programming Language :: Python :: (.*?)['"]''')
 
+logger = logging.getLogger('spiny')
 
 def get_environments(conf):
     if conf.has_option('spiny', 'environments'):
@@ -22,20 +24,21 @@ def get_environments(conf):
 
 def python_info(fullpath):
     # Figure out the version of the Python exe
+    logger.log(10, 'Getting Python version for %s' % fullpath)
     process = subprocess.Popen([fullpath, '--version'],
                                stderr=subprocess.PIPE,
                                stdout=subprocess.PIPE)
+    process.wait()
     stderr = process.stderr.read()
     stdout = process.stdout.read()
     process.stderr.close()
     process.stdout.close()
+    logger.log(10, stderr)
+    logger.log(20, stdout)
 
     version_info = (stderr.strip() + stdout.strip()).decode('ascii', errors='ignore')
     python, version = version_info.split()
     version_tuple = version.split('.')
-
-    process.stderr.close()
-    process.stdout.close()
 
     # Return all valid environment names
     environment1 = '%s%s' % (python.lower(), version_tuple[0])
@@ -112,36 +115,44 @@ def get_pythons(conf):
                                 'version': version,
                                 'path': fullpath}
 
+    # Check that the specified environments have a functioning virtualenv:
     env_list = get_environments(conf)
     for env in env_list:
         if env not in pythons:
             raise EnvironmentError('Could not find an executable for %s' % env)
 
         exepath = pythons[env]['path']
-        process = subprocess.Popen([exepath, '-m', 'virtualenv'],
+        command = [exepath, '-m', 'virtualenv']
+        logger.log(10, 'Checking virtualenv: %s' %  ' '.join(command))
+        process = subprocess.Popen(command,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         stderr = process.stderr.read()
         stdout = process.stdout.read()
         process.stderr.close()
         process.stdout.close()
+        logger.log(10, stderr)
+        logger.log(10, stdout)
 
-        if process.returncode == 1 or stderr:
+        if process.wait() == 1 or stderr:
             # Something went wrong. Most likely there is no virtualenv module
             # installed for this Python. Try with the current Python.
             # TODO: log warnings
-            process = subprocess.Popen([sys.executable,
-                                        '-m', 'virtualenv',
-                                        '-p', exepath],
+            command = [sys.executable, '-m', 'virtualenv', '-p', exepath]
+            logger.log(10, 'That failed. Trying local virtualenv: %s' %  ' '.join(command))
+            process = subprocess.Popen(command,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             stderr = process.stderr.read()
             stdout = process.stdout.read()
             process.stderr.close()
             process.stdout.close()
+            logger.log(10, stderr)
+            logger.log(10, stdout)
+
             # Different versions of virtualenv seem to deal with this error
             # slightly differently. Test for all of it.
-            if (process.returncode in [1, 101] or stderr or
+            if (process.wait() in [1, 101] or stderr or
                 b'ERROR:' in stdout):
                 # That didn't work either.
                 raise EnvironmentError(
