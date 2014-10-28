@@ -5,7 +5,10 @@ import subprocess
 import sys
 
 from spiny import environment, projectdata
-from ConfigParser import ConfigParser
+try:
+    from ConfigParser import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
 
 
 def install_virtualenvs(envnames, pythons, venv_dir):

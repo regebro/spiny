@@ -27,7 +27,7 @@ def python_info(fullpath):
                                stdout=subprocess.PIPE)
     stderr = process.stderr.read()
     stdout = process.stdout.read()
-    version_info = stderr.strip() + stdout.strip()
+    version_info = (stderr.strip() + stdout.strip()).decode('ascii', errors='ignore')
     python, version = version_info.split()
     version_tuple = version.split('.')
 
@@ -129,7 +129,7 @@ def get_pythons(conf):
             # Different versions of virtualenv seem to deal with this error
             # slightly differently. Test for all of it.
             if (process.returncode in [1, 101] or process.stderr.read() or
-                'ERROR:' in process.stdout.read()):
+                b'ERROR:' in process.stdout.read()):
                 # That didn't work either.
                 raise EnvironmentError(
                     "The Python at %s does not have virtualenv installed, and the "
