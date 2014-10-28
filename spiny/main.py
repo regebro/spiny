@@ -41,9 +41,12 @@ def install_virtualenvs(envnames, pythons, venv_dir):
         process = subprocess.Popen(command,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
-        process.wait()
+        stderr = process.stderr.read()
+        stdout = process.stdout.read()
+        process.stderr.close()
+        process.stdout.close()
         # TODO: Log errors, make output levels configurable
-        print(process.stdout.read())
+        print(stdout)
 
         # Install dependencies:
         pip_path = os.path.join(envpath, 'bin', 'pip')
@@ -56,9 +59,12 @@ def install_virtualenvs(envnames, pythons, venv_dir):
         process = subprocess.Popen(command,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
-        process.wait()
+        stderr = process.stderr.read()
+        stdout = process.stdout.read()
+        process.stderr.close()
+        process.stdout.close()
         # TODO: Log errors, make output levels configurable
-        print(process.stdout.read())
+        print(stdout)
 
 def run_commands(envnames, venv_dir, commands):
     """Run a list of commands in each virtualenv"""

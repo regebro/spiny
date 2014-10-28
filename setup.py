@@ -1,8 +1,11 @@
 from setuptools import setup, find_packages
 import os.path
 
-readme = open("README.rst").read()
-changes = open(os.path.join("docs", "CHANGES.txt")).read()
+
+with open("README.rst") as infile:
+   readme = infile.read()
+with open(os.path.join("docs", "CHANGES.txt")) as infile:
+   changes = infile.read()
 long_desc = readme + '\n\n' + changes
 
 setup(
@@ -17,6 +20,8 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
         "Topic :: Software Development :: Testing",
         ],
     packages=find_packages(),

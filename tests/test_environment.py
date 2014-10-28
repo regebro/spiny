@@ -13,14 +13,10 @@ class TestTestEnvironment(unittest.TestCase):
     def test_find_pythons(self):
         with TestEnvironment(['python2']):
             # Python 2 should be there:
-            subprocess.Popen(['python2', '--version'],
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+            subprocess.Popen(['python2', '--version'])
             self.assertRaises(OSError,
                               subprocess.Popen,
-                              ['python3', '--version'],
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
+                              ['python3', '--version'])
 
 
 class TestEnvironmentChecks(unittest.TestCase):

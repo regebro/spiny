@@ -14,8 +14,7 @@ class TestEnvironment(object):
     def __init__(self, env_list):
         self.env_list = env_list
         # By passing in an empty conf, we get the Pythons that are in the path only:
-        conf = ConfigParser()
-        conf.add_section('spiny')
+        conf = make_conf()
         conf.set('spiny', 'environments', ' '.join(env_list))
         self.pythons = spiny.environment.get_pythons(conf)
 

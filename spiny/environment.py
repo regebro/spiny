@@ -27,9 +27,15 @@ def python_info(fullpath):
                                stdout=subprocess.PIPE)
     stderr = process.stderr.read()
     stdout = process.stdout.read()
+    process.stderr.close()
+    process.stdout.close()
+
     version_info = (stderr.strip() + stdout.strip()).decode('ascii', errors='ignore')
     python, version = version_info.split()
     version_tuple = version.split('.')
+
+    process.stderr.close()
+    process.stdout.close()
 
     # Return all valid environment names
     environment1 = '%s%s' % (python.lower(), version_tuple[0])
@@ -115,8 +121,12 @@ def get_pythons(conf):
         process = subprocess.Popen([exepath, '-m', 'virtualenv'],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
-        process.wait()
-        if process.returncode == 1 or process.stderr.read():
+        stderr = process.stderr.read()
+        stdout = process.stdout.read()
+        process.stderr.close()
+        process.stdout.close()
+
+        if process.returncode == 1 or stderr:
             # Something went wrong. Most likely there is no virtualenv module
             # installed for this Python. Try with the current Python.
             # TODO: log warnings
@@ -125,11 +135,14 @@ def get_pythons(conf):
                                         '-p', exepath],
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
-            process.wait()
+            stderr = process.stderr.read()
+            stdout = process.stdout.read()
+            process.stderr.close()
+            process.stdout.close()
             # Different versions of virtualenv seem to deal with this error
             # slightly differently. Test for all of it.
-            if (process.returncode in [1, 101] or process.stderr.read() or
-                b'ERROR:' in process.stdout.read()):
+            if (process.returncode in [1, 101] or stderr or
+                b'ERROR:' in stdout):
                 # That didn't work either.
                 raise EnvironmentError(
                     "The Python at %s does not have virtualenv installed, and the "
