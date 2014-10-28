@@ -4,7 +4,7 @@ CHANGES
 0.3 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Now runs under Python 3.
 
 
 0.2 (2014-10-27)

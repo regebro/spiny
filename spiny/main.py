@@ -1,6 +1,7 @@
 import argparse
 import os
 import os.path
+import pkg_resources
 import subprocess
 import sys
 
@@ -10,6 +11,7 @@ try:
 except ImportError:
     from configparser import ConfigParser
 
+__version__ = pkg_resources.require("spiny")[0].version
 
 def install_virtualenvs(envnames, pythons, venv_dir):
     project_data = projectdata.get_data('.')
@@ -66,6 +68,7 @@ def install_virtualenvs(envnames, pythons, venv_dir):
         # TODO: Log errors, make output levels configurable
         print(stdout)
 
+
 def run_commands(envnames, venv_dir, commands):
     """Run a list of commands in each virtualenv"""
 
@@ -90,16 +93,50 @@ def run_commands(envnames, venv_dir, commands):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Run tests under several Python versions')
+        description='Run tests under several Python versions.',
+        add_help=False
+    )
 
     parser.add_argument(
-        '--config',
+        '-h',
+        '--help',
+        action='help',
+        help='Show this help message and exit.')
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=__version__,
+        help='Show the version and exit.')
+
+    parser.add_argument(
         '-c',
+        '--config',
         action='store',
         default='spiny.cfg',
         metavar='<filename>',
         type=str,
-        help='The config file to use. Defaults "to spiny.cfg"')
+        help='The config file to use. Defaults "to spiny.cfg".')
+
+    parser.add_argument(
+        '-e',
+        '--envlist',
+        action='store',
+        metavar='<environments>',
+        type=str,
+        help='A list of environments to run, separated by commas.')
+
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        action='count',
+        help='Increases the output, -vv increases it even more.')
+
+    parser.add_argument(
+        '-q',
+        '--quiet',
+        action='count',
+        help='Reduces output to only the run summary, -qq removes also that.')
 
     parser.add_argument(
         'configvar',

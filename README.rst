@@ -72,10 +72,10 @@ Todo
 
 Things that desperately needs doing:
 
-  * Run it under Python 3, PyPy, IronPython, Jython.
+  * Run it under PyPy, IronPython, Jython.
 
   * Add more logging (and a verbose parameter)
 
   * Make the tests run under itself
 
-  * Makre tests run in parallell
+  * Make tests run in parallell
