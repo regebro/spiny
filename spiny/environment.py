@@ -38,7 +38,7 @@ def get_environments(conf):
 def python_info(fullpath):
     # Figure out the version of the Python exe
     logger.log(10, 'Getting Python version for %s' % fullpath)
-    with subprocess.Popen([fullpath, '--version'],
+    with subprocess.Popen([fullpath, '-V'],
                           stderr=subprocess.PIPE,
                           stdout=subprocess.PIPE) as process:
         process.wait()
@@ -47,15 +47,19 @@ def python_info(fullpath):
         logger.log(10, stderr)
         logger.log(10, stdout)
 
-        version_info = (stderr.strip() + stdout.strip()).decode('ascii', errors='ignore')
+        # Python 3.4 and Jython prints it on stdout, all others on stderr.
+        if stdout:
+            version_string = stdout
+        else:
+            version_string = stderr
+
+        version_info = version_string.strip().decode('ascii', errors='ignore')
         pypy = PYPY_VER_RE.search(version_info)
         if pypy:
             python = 'PyPy'
             version = pypy.groups()[0]
         else:
             parts = version_info.split()
-            if len(parts) != 2:
-                raise EnvironmentError("Unkown Python interpreter at %s" % fullpath)
             python = parts[0]
             version = parts[1]
 
@@ -81,7 +85,7 @@ def list_pythons_on_path(path):
         for filename in files:
             execname = ''.join(x for x in filename.lower()
                                if x in string.ascii_lowercase)
-            if execname not in ('python', 'pypy', 'jython', 'ironpython'):
+            if execname not in ('python', 'pypy', 'jython', 'ipyexe'):
                 continue
 
             # Find the executable

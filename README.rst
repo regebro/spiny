@@ -67,12 +67,17 @@ but the usecase for that is very limited. Possibly if you are using custom
 Pythons in your project. You can also add a ``[spiny]`` section to your personal
 ``spiny.cfg``, but that is not likely to be useful.
 
+It can also run the tests under PyPy and Jython, although virtualenv doesn't
+seem to support IronPython, so running the tests under IronPython currently
+does not work.
+
+
 Todo
 ----
 
 Things that desperately needs doing:
 
-  * Run it under PyPy3, IronPython.
+  * Make sure that PyPy3 also works
 
   * Make the tests run under itself
 
