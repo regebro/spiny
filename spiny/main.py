@@ -3,13 +3,15 @@ import logging
 import os
 import os.path
 import pkg_resources
-import subprocess
 import sys
 
 from spiny import environment, projectdata
-try:
+
+if sys.version_info < (3,):
+    import subprocess32 as subprocess
     from ConfigParser import ConfigParser
-except ImportError:
+else:
+    import subprocess
     from configparser import ConfigParser
 
 __version__ = pkg_resources.require("spiny")[0].version
@@ -97,20 +99,17 @@ def install_virtualenvs(envnames, pythons, venv_dir):
 
         logger.log(30, 'Install/update virtualenv for %s' %  envname)
         logger.log(10, 'Using command: %s' %  ' '.join(command))
-        process = subprocess.Popen(command,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-        stderr = process.stderr.read()
-        stdout = process.stdout.read()
-        process.stderr.close()
-        process.stdout.close()
-        logger.log(30, stderr)
-        logger.log(20, stdout)
-        if process.wait() != 0:
-            # This failed somehow
-            results[envname] = process.wait()
-            logger.log(30, "Installing/updating virtualenv for %s failed!" % envname)
-            continue
+        with subprocess.Popen(command,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as process:
+            process.wait()
+            logger.log(30, process.stderr.read())
+            logger.log(20, process.stdout.read())
+            if process.returncode != 0:
+                # This failed somehow
+                results[envname] = process.returncode
+                logger.log(30, "Installing/updating virtualenv for %s failed!" % envname)
+                continue
 
         # Install dependencies:
         pip_path = os.path.join(envpath, 'bin', 'pip')
@@ -121,20 +120,17 @@ def install_virtualenvs(envnames, pythons, venv_dir):
         command = [pip_path] + parameters + ['install'] + requirements
 
         logger.log(10, 'Install dependencies with command: %s' %  ' '.join(command))
-        process = subprocess.Popen(command,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-        stderr = process.stderr.read()
-        stdout = process.stdout.read()
-        process.stderr.close()
-        process.stdout.close()
-        logger.log(30, stderr)
-        logger.log(20, stdout)
-        if process.wait() != 0:
-            # This failed somehow
-            results[envname] = process.wait()
-            logger.log(30, "Installing/updating virtualenv for %s failed!" % envname)
-            continue
+        with subprocess.Popen(command,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as process:
+            process.wait()
+            logger.log(30, process.stderr.read())
+            logger.log(20, process.stdout.read())
+            if process.returncode != 0:
+                # This failed somehow
+                results[envname] = process.returncode
+                logger.log(30, "Installing/updating virtualenv for %s failed!" % envname)
+                continue
 
     return results
 
@@ -147,25 +143,19 @@ def run_commands(envnames, venv_dir, commands):
         logger.log(30, 'Running tests for %s' %  envname)
         envpath = os.path.join(venv_dir, envname)
         python = os.path.join(envpath, 'bin', envname)
-        environment = {'environment': envpath,
-                       'python': python}
-
         fail = False
         for command in commands:
-            command = command.strip().format(**environment)
+            command = command.strip().format(environment=envpath, python=python)
             logger.log(10, 'Using command: %s' %  command)
-            process = subprocess.Popen(command.split(),
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-            stderr = process.stderr.read()
-            stdout = process.stdout.read()
-            process.stderr.close()
-            process.stdout.close()
-            logger.log(30, stderr)
-            logger.log(30, stdout)
-            if process.wait() != 0:
-                fail = True
-                break
+            with subprocess.Popen(command.split(),
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE) as process:
+                process.wait()
+                logger.log(30, process.stderr.read())
+                logger.log(30, process.stdout.read())
+                if process.returncode != 0:
+                    fail = True
+                    break
 
         results[envname] = fail
     return results

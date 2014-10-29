@@ -10,6 +10,8 @@ CHANGES
 
 - Added --version, --verbose and --quiet options.
 
+- Now use subprocess32 under Python 2.
+
 
 0.2 (2014-10-27)
 ----------------

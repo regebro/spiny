@@ -1,5 +1,5 @@
 import os
-import subprocess
+import sys
 import unittest
 
 from spiny import environment
@@ -7,13 +7,21 @@ from spiny import main
 from .utils import TestEnvironment
 from .utils import make_conf
 
+if sys.version_info < (3,):
+    import subprocess32 as subprocess
+    from ConfigParser import ConfigParser
+else:
+    import subprocess
+    from configparser import ConfigParser
+
 
 class TestTestEnvironment(unittest.TestCase):
     """Check that the TestEnvironment context manager works"""
     def test_find_pythons(self):
         with TestEnvironment(['python2']):
             # Python 2 should be there:
-            subprocess.Popen(['python2', '--version'])
+            with subprocess.Popen(['python2', '--version'], stderr=subprocess.PIPE) as process:
+                process.wait()
             self.assertRaises(OSError,
                               subprocess.Popen,
                               ['python3', '--version'])
