@@ -21,6 +21,9 @@ class TestTestEnvironment(unittest.TestCase):
 
 class TestEnvironmentChecks(unittest.TestCase):
 
+    def setUp(self):
+        main.setup_logging(0, 2)
+
     def test_pythons_exist(self):
         conf = make_conf()
         conf.set('spiny', 'environments', 'python2 python3')
