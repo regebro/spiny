@@ -69,7 +69,8 @@ def setup_logging(verbose, quiet):
     logger.addHandler(handler)
 
 
-def install_virtualenvs(envnames, pythons, venv_dir):
+def run_tests(envnames, pythons, venv_dir, commands):
+    """Run a list of commands in each virtualenv"""
     project_data = projectdata.get_data('.')
 
     requirements = []
@@ -107,8 +108,9 @@ def install_virtualenvs(envnames, pythons, venv_dir):
             logger.log(20, process.stdout.read())
             if process.returncode != 0:
                 # This failed somehow
-                results[envname] = process.returncode
-                logger.log(30, "Installing/updating virtualenv for %s failed!" % envname)
+                msg = "Installing/updating virtualenv for %s failed!" % envname
+                results[envname] = msg
+                logger.log(30, msg)
                 continue
 
         # Install dependencies:
@@ -128,22 +130,15 @@ def install_virtualenvs(envnames, pythons, venv_dir):
             logger.log(20, process.stdout.read())
             if process.returncode != 0:
                 # This failed somehow
-                results[envname] = process.returncode
-                logger.log(30, "Installing/updating virtualenv for %s failed!" % envname)
+                msg = "Installing/updating dependencies for %s failed!" % envname
+                results[envname] = msg
+                logger.log(30, msg)
                 continue
 
-    return results
-
-
-def run_commands(envnames, venv_dir, commands):
-    """Run a list of commands in each virtualenv"""
-
-    results = {}
-    for envname in envnames:
+        # Run tests:
         logger.log(30, 'Running tests for %s' %  envname)
         envpath = os.path.join(venv_dir, envname)
         python = os.path.join(envpath, 'bin', envname)
-        fail = False
         for command in commands:
             command = command.strip().format(environment=envpath, python=python)
             logger.log(10, 'Using command: %s' %  command)
@@ -154,10 +149,9 @@ def run_commands(envnames, venv_dir, commands):
                 logger.log(30, process.stderr.read())
                 logger.log(30, process.stdout.read())
                 if process.returncode != 0:
-                    fail = True
-                    break
+                    msg = "Tests failed for %s!" % envname
+                    results[envname] = msg
 
-        results[envname] = fail
     return results
 
 
@@ -258,23 +252,18 @@ def run(config_file, overrides):
     venv_dir = os.path.abspath(venv_dir)
     envs = environment.get_environments(config)
 
-    results = install_virtualenvs(envs, pythons, venv_dir)
-
-    # Filter out environments whose virtualenv failed.
-    envs = [env for env in envs if env not in results]
-
-    # Run commands
+    # Run tests
     if not config.has_option('spiny', 'test_commands'):
         commands = ['{python} setup.py test']
     else:
         commands = config.get('spiny', 'test_commands').splitlines()
 
-    results.update(run_commands(envs, venv_dir, commands))
+    results = run_tests(envs, pythons, venv_dir, commands)
 
     # Done
     for env in envs:
-        if results[env]:
-            logger.log(40, "ERROR: Running tests under %s failed!" % env)
+        if results.get(env):
+            logger.log(40, "ERROR: " + results[env])
         else:
             logger.log(40, "       Running tests under %s suceeded." % env)
 
