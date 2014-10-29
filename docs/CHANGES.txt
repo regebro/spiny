@@ -4,7 +4,7 @@ CHANGES
 0.3 (unreleased)
 ----------------
 
-- Now runs under Python 3.
+- Now runs under Python 3, PyPy.
 
 - All output is now through logging, which enables you to select verbosity.
 
@@ -13,8 +13,6 @@ CHANGES
 - Now use subprocess32 under Python 2.
 
 - Will now run tests in parallell with multiprocessing.
-
-- PyPy support.
 
 
 0.2 (2014-10-27)

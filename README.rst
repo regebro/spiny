@@ -72,7 +72,7 @@ Todo
 
 Things that desperately needs doing:
 
-  * Run it under PyPy3, IronPython, Jython.
+  * Run it under PyPy3, IronPython.
 
   * Make the tests run under itself
 
