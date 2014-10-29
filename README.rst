@@ -76,4 +76,4 @@ Things that desperately needs doing:
 
   * Make the tests run under itself
 
-  * Make tests run in parallell
+  * Config for how many processes to use in parallell

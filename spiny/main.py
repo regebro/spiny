@@ -1,11 +1,10 @@
 import argparse
 import logging
+import multiprocessing
 import os
 import os.path
 import pkg_resources
 import sys
-
-from spiny import environment, projectdata
 
 if sys.version_info < (3,):
     import subprocess32 as subprocess
@@ -13,6 +12,8 @@ if sys.version_info < (3,):
 else:
     import subprocess
     from configparser import ConfigParser
+
+from spiny import environment, projectdata
 
 __version__ = pkg_resources.require("spiny")[0].version
 
@@ -75,15 +76,16 @@ def run_all_tests(envnames, pythons, venv_dir, test_commands):
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
 
-    results = {}
-    for envname in envnames:
-        envdict = pythons[envname]
-        results[envname] = run_tests(envname, envdict, venv_dir, test_commands)
+    cpus = min(multiprocessing.cpu_count(), len(envnames))
+    logger.log(20, "Using %s parallel processes" % cpus)
+    pool = multiprocessing.Pool(processes=cpus)
+    results = pool.map(run_tests, [(envname, pythons[envname], venv_dir, test_commands) for envname in envnames])
 
-    return results
+    return dict(zip(envnames, results))
 
 
-def run_tests(envname, envdict, venv_dir, test_commands):
+def run_tests(args):
+    envname, envdict, venv_dir, test_commands = args
     project_data = projectdata.get_data('.')
 
     requirements = []
