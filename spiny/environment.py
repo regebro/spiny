@@ -10,7 +10,7 @@ if sys.version_info < (3,):
 else:
     import subprocess
 
-PYTHON_TROVE_RE = re.compile(b'''Programming Language :: Python :: (.*?)['"]''')
+PYTHON_TROVE_RE = re.compile(b'''Programming Language :: Python :: (.*?)( :: (.*?))?['"]''')
 PYPY_VER_RE = re.compile(r'PyPy ([\d\.]*)')
 
 logger = logging.getLogger('spiny')
@@ -20,7 +20,13 @@ def get_environments(conf):
         environments = conf.get('spiny', 'environments').split()
     else:
         with open('setup.py', 'rb') as setuppy:
-            environments = ['python' + version for version in PYTHON_TROVE_RE.findall(setuppy.read())]
+            environments = []
+            for match in PYTHON_TROVE_RE.findall(setuppy.read()):
+                if match[2]:
+                    env = match[2].lower()
+                else:
+                    env = 'python' + match[0]
+                environments.append(env)
 
     # If "Python X" is specified and "Python X.Y" is also specified, skip "Python X"
     return [e for e in environments if not any([x.startswith(e) and len(x) >
@@ -54,11 +60,12 @@ def python_info(fullpath):
         version_tuple = version.split('.')
 
     # Return all valid environment names
+    environment0 = '%s' % python.lower()
     environment1 = '%s%s' % (python.lower(), version_tuple[0])
     environment2 = '%s.%s' % (environment1, version_tuple[1])
     environment3 = '%s.%s' % (environment2, version_tuple[2])
 
-    return python, version, [environment1, environment2, environment3]
+    return python, version, [environment0, environment1, environment2, environment3]
 
 
 def list_pythons_on_path(path):
