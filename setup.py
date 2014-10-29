@@ -1,6 +1,11 @@
 from setuptools import setup, find_packages
 import os.path
+import sys
 
+if sys.version_info < (3,):
+   install_requires = ['subprocess32']
+else:
+   install_requires = []
 
 with open("README.rst") as infile:
    readme = infile.read()
@@ -31,7 +36,7 @@ setup(
     author_email='regebro@gmail.com',
     url="https://github.com/regebro/spiny/",
     license='MIT',
-    install_requires=[],
+    install_requires=install_requires,
     entry_points={
         'console_scripts': [
             'spiny = spiny.main:main',
