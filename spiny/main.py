@@ -69,17 +69,8 @@ def setup_logging(verbose, quiet):
     logger.addHandler(handler)
 
 
-def run_tests(envnames, pythons, venv_dir, commands):
+def run_all_tests(envnames, pythons, venv_dir, test_commands):
     """Run a list of commands in each virtualenv"""
-    project_data = projectdata.get_data('.')
-
-    requirements = []
-    requirements.extend(project_data.get('install_requires', []))
-    requirements.extend(project_data.get('setup_requires', []))
-    requirements.extend(project_data.get('tests_require', []))
-    requirements.extend(project_data.get('extras_require', {}).get('tests', []))
-
-    dependency_links = project_data.get('dependency_links', [])
 
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
@@ -87,72 +78,85 @@ def run_tests(envnames, pythons, venv_dir, commands):
     results = {}
     for envname in envnames:
         envdict = pythons[envname]
-        exepath = envdict['path']
-        envpath = os.path.join(venv_dir, envname)
-
-        if envdict['virtualenv'] == 'internal':
-            # Internal means use the virtualenv for the relevant Python
-            command = [exepath, '-m', 'virtualenv', envpath]
-        else:
-            # External means use the virtualenv for the current Python
-            command = [sys.executable, '-m', 'virtualenv',
-                       '-p', exepath, envpath]
-
-        logger.log(30, 'Install/update virtualenv for %s' %  envname)
-        logger.log(10, 'Using command: %s' %  ' '.join(command))
-        with subprocess.Popen(command,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE) as process:
-            process.wait()
-            logger.log(30, process.stderr.read())
-            logger.log(20, process.stdout.read())
-            if process.returncode != 0:
-                # This failed somehow
-                msg = "Installing/updating virtualenv for %s failed!" % envname
-                results[envname] = msg
-                logger.log(30, msg)
-                continue
-
-        # Install dependencies:
-        pip_path = os.path.join(envpath, 'bin', 'pip')
-        parameters = '-f '.join(dependency_links).split()
-        if envdict['python'] == 'Python' and envdict['version'] < '2.6': # Using 2.5 or worse
-            parameters.append('--insecure')
-
-        command = [pip_path] + parameters + ['install'] + requirements
-
-        logger.log(10, 'Install dependencies with command: %s' %  ' '.join(command))
-        with subprocess.Popen(command,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE) as process:
-            process.wait()
-            logger.log(30, process.stderr.read())
-            logger.log(20, process.stdout.read())
-            if process.returncode != 0:
-                # This failed somehow
-                msg = "Installing/updating dependencies for %s failed!" % envname
-                results[envname] = msg
-                logger.log(30, msg)
-                continue
-
-        # Run tests:
-        logger.log(30, 'Running tests for %s' %  envname)
-        envpath = os.path.join(venv_dir, envname)
-        python = os.path.join(envpath, 'bin', envname)
-        for command in commands:
-            command = command.strip().format(environment=envpath, python=python)
-            logger.log(10, 'Using command: %s' %  command)
-            with subprocess.Popen(command.split(),
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE) as process:
-                process.wait()
-                logger.log(30, process.stderr.read())
-                logger.log(30, process.stdout.read())
-                if process.returncode != 0:
-                    msg = "Tests failed for %s!" % envname
-                    results[envname] = msg
+        results[envname] = run_tests(envname, envdict, venv_dir, test_commands)
 
     return results
+
+
+def run_tests(envname, envdict, venv_dir, test_commands):
+    project_data = projectdata.get_data('.')
+
+    requirements = []
+    requirements.extend(project_data.get('install_requires', []))
+    requirements.extend(project_data.get('setup_requires', []))
+    requirements.extend(project_data.get('tests_require', []))
+    requirements.extend(project_data.get('extras_require', {}).get('tests', []))
+    dependency_links = project_data.get('dependency_links', [])
+
+    exepath = envdict['path']
+    envpath = os.path.join(venv_dir, envname)
+
+    if envdict['virtualenv'] == 'internal':
+        # Internal means use the virtualenv for the relevant Python
+        command = [exepath, '-m', 'virtualenv', envpath]
+    else:
+        # External means use the virtualenv for the current Python
+        command = [sys.executable, '-m', 'virtualenv',
+                   '-p', exepath, envpath]
+
+    logger.log(30, 'Install/update virtualenv for %s' %  envname)
+    logger.log(10, 'Using command: %s' %  ' '.join(command))
+    with subprocess.Popen(command,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE) as process:
+        process.wait()
+        logger.log(30, process.stderr.read())
+        logger.log(20, process.stdout.read())
+        if process.returncode != 0:
+            # This failed somehow
+            msg = "Installing/updating virtualenv for %s failed!" % envname
+            logger.log(30, msg)
+            return msg
+
+    # Install dependencies:
+    pip_path = os.path.join(envpath, 'bin', 'pip')
+    parameters = '-f '.join(dependency_links).split()
+    if envdict['python'] == 'Python' and envdict['version'] < '2.6': # Using 2.5 or worse
+        parameters.append('--insecure')
+
+    command = [pip_path] + parameters + ['install'] + requirements
+
+    logger.log(10, 'Install dependencies with command: %s' %  ' '.join(command))
+    with subprocess.Popen(command,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE) as process:
+        process.wait()
+        logger.log(30, process.stderr.read())
+        logger.log(20, process.stdout.read())
+        if process.returncode != 0:
+            # This failed somehow
+            msg = "Installing/updating dependencies for %s failed!" % envname
+            logger.log(30, msg)
+            return msg
+
+    # Run tests:
+    logger.log(30, 'Running tests for %s' %  envname)
+    envpath = os.path.join(venv_dir, envname)
+    python = os.path.join(envpath, 'bin', envname)
+    for command in test_commands:
+        command = command.strip().format(environment=envpath, python=python)
+        logger.log(10, 'Using command: %s' %  command)
+        with subprocess.Popen(command.split(),
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as process:
+            process.wait()
+            logger.log(30, process.stderr.read())
+            logger.log(30, process.stdout.read())
+            if process.returncode != 0:
+                msg = "Tests failed for %s!" % envname
+                return msg
+
+    return None # Got None problems!
 
 
 def main():
@@ -258,7 +262,7 @@ def run(config_file, overrides):
     else:
         commands = config.get('spiny', 'test_commands').splitlines()
 
-    results = run_tests(envs, pythons, venv_dir, commands)
+    results = run_all_tests(envs, pythons, venv_dir, commands)
 
     # Done
     for env in envs:
