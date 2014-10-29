@@ -10,7 +10,8 @@ if sys.version_info < (3,):
 else:
     import subprocess
 
-PYTHON_RE = re.compile(b'''Programming Language :: Python :: (.*?)['"]''')
+PYTHON_TROVE_RE = re.compile(b'''Programming Language :: Python :: (.*?)['"]''')
+PYPY_VER_RE = re.compile(r'PyPy ([\d\.]*)')
 
 logger = logging.getLogger('spiny')
 
@@ -19,7 +20,7 @@ def get_environments(conf):
         environments = conf.get('spiny', 'environments').split()
     else:
         with open('setup.py', 'rb') as setuppy:
-            environments = ['python' + version for version in PYTHON_RE.findall(setuppy.read())]
+            environments = ['python' + version for version in PYTHON_TROVE_RE.findall(setuppy.read())]
 
     # If "Python X" is specified and "Python X.Y" is also specified, skip "Python X"
     return [e for e in environments if not any([x.startswith(e) and len(x) >
@@ -39,7 +40,17 @@ def python_info(fullpath):
         logger.log(20, stdout)
 
         version_info = (stderr.strip() + stdout.strip()).decode('ascii', errors='ignore')
-        python, version = version_info.split()
+        pypy = PYPY_VER_RE.search(version_info)
+        if pypy:
+            python = 'PyPy'
+            version = pypy.groups()[0]
+        else:
+            parts = version_info.split()
+            if len(parts) != 2:
+                raise EnvironmentError("Unkown Python interpreter at %s" % fullpath)
+            python = parts[0]
+            version = parts[1]
+
         version_tuple = version.split('.')
 
     # Return all valid environment names
