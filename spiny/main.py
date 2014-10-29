@@ -100,10 +100,10 @@ def run_tests(args):
 
     if envdict['virtualenv'] == 'internal':
         # Internal means use the virtualenv for the relevant Python
-        command = [exepath, '-m', 'virtualenv', envpath]
+        command = [exepath, '-m', 'virtualenv', '-v', envpath]
     else:
         # External means use the virtualenv for the current Python
-        command = [sys.executable, '-m', 'virtualenv',
+        command = [sys.executable, '-m', 'virtualenv', '-v',
                    '-p', exepath, envpath]
 
     logger.log(30, 'Install/update virtualenv for %s' %  envname)

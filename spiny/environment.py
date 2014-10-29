@@ -5,6 +5,8 @@ import re
 import string
 import sys
 
+from distutils.version import LooseVersion
+
 if sys.version_info < (3,):
     import subprocess32 as subprocess
 else:
@@ -43,7 +45,7 @@ def python_info(fullpath):
         stderr = process.stderr.read()
         stdout = process.stdout.read()
         logger.log(10, stderr)
-        logger.log(20, stdout)
+        logger.log(10, stdout)
 
         version_info = (stderr.strip() + stdout.strip()).decode('ascii', errors='ignore')
         pypy = PYPY_VER_RE.search(version_info)
@@ -57,16 +59,14 @@ def python_info(fullpath):
             python = parts[0]
             version = parts[1]
 
-        version_tuple = version.split('.')
-
     # Return all valid environment names
-    environment0 = '%s' % python.lower()
-    environment1 = '%s%s' % (python.lower(), version_tuple[0])
-    environment2 = '%s.%s' % (environment1, version_tuple[1])
-    environment3 = '%s.%s' % (environment2, version_tuple[2])
+    env_version = LooseVersion(version).version
+    environment = ['%s' % python.lower(),
+                   '%s%s' % (python.lower(), env_version[0])]
+    for v in env_version[1:]:
+        environment.append('%s.%s' % (environment[-1], v))
 
-    return python, version, [environment0, environment1, environment2, environment3]
-
+    return python, version, environment
 
 def list_pythons_on_path(path):
     """Finds all Python versions in the list of directory paths given"""
