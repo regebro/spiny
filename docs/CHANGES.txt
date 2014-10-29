@@ -14,6 +14,8 @@ CHANGES
 
 - Will now run tests in parallell with multiprocessing.
 
+- PyPy support.
+
 
 0.2 (2014-10-27)
 ----------------
