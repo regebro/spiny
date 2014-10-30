@@ -20,7 +20,7 @@ setup(
     long_description=long_desc,
     keywords=['development', 'tools', 'testing'],
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Operating System :: Unix",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.6",
