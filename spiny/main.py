@@ -19,6 +19,7 @@ __version__ = pkg_resources.require("spiny")[0].version
 
 logger = logging.getLogger('spiny')
 
+
 class Filter(object):
     """Only log messages that are non-empty."""
 
@@ -81,7 +82,8 @@ def run_all_tests(envnames, pythons, venv_dir, test_commands, max_proc=None):
         cpus = min(cpus, max_proc)
     logger.log(20, "Using %s parallel processes" % cpus)
     pool = multiprocessing.Pool(processes=cpus)
-    results = pool.map(run_tests, [(envname, pythons[envname], venv_dir, test_commands) for envname in envnames])
+    results = pool.map(run_tests, [(envname, pythons[envname], venv_dir,
+                                    test_commands) for envname in envnames])
 
     return dict(zip(envnames, results))
 
@@ -108,8 +110,8 @@ def run_tests(args):
         command = [sys.executable, '-m', 'virtualenv', '-v',
                    '-p', exepath, envpath]
 
-    logger.log(30, 'Install/update virtualenv for %s' %  envname)
-    logger.log(10, 'Using command: %s' %  ' '.join(command))
+    logger.log(30, 'Install/update virtualenv for %s' % envname)
+    logger.log(10, 'Using command: %s' % ' '.join(command))
     with subprocess.Popen(command,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE) as process:
@@ -125,12 +127,13 @@ def run_tests(args):
     # Install dependencies:
     pip_path = os.path.join(envpath, 'bin', 'pip')
     parameters = '-f '.join(dependency_links).split()
-    if envdict['python'] == 'Python' and envdict['version'] < '2.6': # Using 2.5 or worse
+    if envdict['python'] == 'Python' and envdict['version'] < '2.6':
+        # Using 2.5 or worse means no SSL.
         parameters.append('--insecure')
 
     command = [pip_path] + parameters + ['install'] + requirements
 
-    logger.log(10, 'Install dependencies with command: %s' %  ' '.join(command))
+    logger.log(10, 'Install dependencies with command: %s' % ' '.join(command))
     with subprocess.Popen(command,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE) as process:
@@ -144,13 +147,13 @@ def run_tests(args):
             return msg
 
     # Run tests:
-    logger.log(30, 'Running tests for %s' %  envname)
+    logger.log(30, 'Running tests for %s' % envname)
     envpath = os.path.join(venv_dir, envname)
     python = os.path.join(envpath, 'bin', envdict['execname'])
 
     for command in test_commands:
         command = command.strip().format(environment=envpath, python=python)
-        logger.log(10, 'Using command: %s' %  command)
+        logger.log(10, 'Using command: %s' % command)
         with subprocess.Popen(command.split(),
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE) as process:
@@ -161,7 +164,7 @@ def run_tests(args):
                 msg = "Tests failed for %s!" % envname
                 return msg
 
-    return None # Got None problems!
+    return None
 
 
 def main():

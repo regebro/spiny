@@ -3,6 +3,7 @@ import os
 import sys
 import logging
 
+
 class FakeContext(object):
 
     def __init__(self, path):
@@ -87,6 +88,7 @@ def _specified_versions(data):
                 # Not a proper Python version
                 continue
 
+
 def get_data(path):
     """
     Returns data from a package directory.
@@ -105,13 +107,13 @@ def get_data(path):
                     # often has a main() script to call instead. Try that.
                     try:
                         setup.main()
-                    except TypeError: # OK, so it's twisted.
+                    except TypeError:  # OK, so it's twisted.
                         try:
                             setup.main([])
                         except TypeError:
-                            pass # OK, not twisted, then.
+                            pass  # OK, not twisted, then.
                     except AttributeError:
-                        pass # No, no main.
+                        pass  # No, no main.
 
                     metadata = sm.get_data()
                 del sys.modules['setup']

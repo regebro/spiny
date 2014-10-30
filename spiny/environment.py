@@ -17,6 +17,7 @@ PYPY_VER_RE = re.compile(r'PyPy ([\d\.]*)')
 
 logger = logging.getLogger('spiny')
 
+
 def get_environments(conf):
     if conf.has_option('spiny', 'environments'):
         environments = conf.get('spiny', 'environments').split()
@@ -32,7 +33,7 @@ def get_environments(conf):
 
     # If "Python X" is specified and "Python X.Y" is also specified, skip "Python X"
     return [e for e in environments if not any([x.startswith(e) and len(x) >
-                                                len( e) for x in environments])]
+                                                len(e) for x in environments])]
 
 
 def python_info(fullpath):
@@ -80,6 +81,7 @@ def python_info(fullpath):
             'execname': os.path.split(fullpath)[-1],
             'environments': environment}
 
+
 def list_pythons_on_path(path):
     """Finds all Python versions in the list of directory paths given"""
     pythons = {}
@@ -108,10 +110,11 @@ def list_pythons_on_path(path):
 
             yield fullpath
 
+
 def has_virtualenv(exepath):
     command = [exepath, '-m', 'virtualenv']
 
-    logger.log(10, 'Checking for virtualenv: %s' %  ' '.join(command))
+    logger.log(10, 'Checking for virtualenv: %s' % ' '.join(command))
     with subprocess.Popen(command,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE) as process:
@@ -123,9 +126,10 @@ def has_virtualenv(exepath):
 
         return not (process.returncode == 1 or stderr)
 
+
 def can_use_current_virtualenv(exepath):
     command = [sys.executable, '-m', 'virtualenv', '-p', exepath]
-    logger.log(10, 'Trying local virtualenv: %s' %  ' '.join(command))
+    logger.log(10, 'Trying local virtualenv: %s' % ' '.join(command))
     with subprocess.Popen(command,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE) as process:
