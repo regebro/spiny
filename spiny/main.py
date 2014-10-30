@@ -91,6 +91,7 @@ def run_all_tests(envnames, pythons, venv_dir, test_commands, max_proc=None):
 def run_tests(args):
     envname, envdict, venv_dir, test_commands = args
     project_data = projectdata.get_data('.')
+    project_dir = os.path.abspath(os.path.curdir)
 
     requirements = []
     requirements.extend(project_data.get('install_requires', []))
@@ -152,7 +153,9 @@ def run_tests(args):
     python = os.path.join(envpath, 'bin', envdict['execname'])
 
     for command in test_commands:
-        command = command.strip().format(environment=envpath, python=python)
+        command = command.strip().format(envpath=envpath,
+                                         python=python,
+                                         project_dir=project_dir)
         logger.log(10, 'Using command: %s' % command)
         with subprocess.Popen(command.split(),
                               stdout=subprocess.PIPE,
@@ -221,7 +224,7 @@ def main():
         nargs='*',
         metavar='<configvar>',
         help='Override a config variable by "section:variable=value" '
-             'Example: "spiny:venv_dir=.venv"')
+             'Example: "spiny:venv-dir=.venv"')
 
     args = parser.parse_args()
 
@@ -257,18 +260,18 @@ def run(config_file, overrides):
     pythons = environment.get_pythons(config)
 
     # Install a virtualenv for each environment
-    if config.has_option('spiny', 'venv_dir'):
-        venv_dir = config.get('spiny', 'venv_dir')
+    if config.has_option('spiny', 'venv-dir'):
+        venv_dir = config.get('spiny', 'venv-dir')
     else:
         venv_dir = '.venv'
     venv_dir = os.path.abspath(venv_dir)
     envs = environment.get_environments(config)
 
     # Run tests
-    if not config.has_option('spiny', 'test_commands'):
+    if not config.has_option('spiny', 'test-commands'):
         commands = ['{python} setup.py test']
     else:
-        commands = config.get('spiny', 'test_commands').splitlines()
+        commands = config.get('spiny', 'test-commands').splitlines()
 
     if config.has_option('spiny', 'max-processes'):
         max_proc = int(config.get('spiny', 'max-processes'))

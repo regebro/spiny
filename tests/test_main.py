@@ -32,7 +32,7 @@ class TestMinimal(TestMainBase):
     def test_minimal(self):
         venv_dir = os.path.join(self.test_dir, '.venv')
         sys.argv = [sys.executable, '-qq', '-c', self.use_config,
-                    'spiny:venv_dir=%s' % venv_dir]
+                    'spiny:venv-dir=%s' % venv_dir]
         spiny.main.main()
         self.assertTrue(os.path.isdir(venv_dir),
                         "The .venv directory was not created")
@@ -45,7 +45,7 @@ class TestDual(TestMainBase):
     def test_minimal(self):
         venv_dir = os.path.join(self.test_dir, '.venv')
         sys.argv = [sys.executable, '-qq', '-c', self.use_config,
-                    'spiny:venv_dir=%s' % venv_dir]
+                    'spiny:venv-dir=%s' % venv_dir]
         spiny.main.main()
         self.assertTrue(os.path.isdir(venv_dir),
                         "The .venv directory was not created")
