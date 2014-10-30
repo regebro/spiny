@@ -146,12 +146,7 @@ def run_tests(args):
     # Run tests:
     logger.log(30, 'Running tests for %s' %  envname)
     envpath = os.path.join(venv_dir, envname)
-    if envname.startswith('pypy'):
-        # PyPy only installes 'pypy' as an exec name.
-        # IMO that's a bug.
-        python = os.path.join(envpath, 'bin', 'pypy')
-    else:
-        python = os.path.join(envpath, 'bin', envname)
+    python = os.path.join(envpath, 'bin', envdict['execname'])
 
     for command in test_commands:
         command = command.strip().format(environment=envpath, python=python)

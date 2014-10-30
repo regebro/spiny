@@ -74,7 +74,11 @@ def python_info(fullpath):
     for v in env_version[1:]:
         environment.append('%s.%s' % (environment[-1], v))
 
-    return python, version, environment
+    return {'python': python,
+            'version': version,
+            'path': fullpath,
+            'execname': os.path.split(fullpath)[-1],
+            'environments': environment}
 
 def list_pythons_on_path(path):
     """Finds all Python versions in the list of directory paths given"""
@@ -147,33 +151,24 @@ def get_pythons(conf):
                 # Not executable
                 raise EnvironmentError('%s is not executable' % path)
 
-            p, v, envs = python_info(path)
-            if python not in envs:
+            info = python_info(path)
+            if python not in info['environments']:
                 raise EnvironmentError(
                     'Executable %s is not the given version %s' % (path, python))
 
-            # The given python is OK, add it to the python env:
-            pythons[python] = {'python': p,
-                               'version': v,
-                               'path': path}
-
             # Add the other envs for this particular python, if this is a higher version:
-            for env in envs:
-                if env not in pythons or pythons[env]['version'] < v:
-                    pythons[env] = {'python': p,
-                                    'version': v,
-                                    'path': path}
+            for env in info['environments']:
+                if env not in pythons or pythons[env]['version'] < info['version']:
+                    pythons[env] = info
 
     # Add the Python versions in the path for versions that are not specified:
     path = os.environ['PATH']
     for fullpath in list_pythons_on_path(path):
 
-        python, version, envs = python_info(fullpath)
-        for env in envs:
+        info = python_info(fullpath)
+        for env in info['environments']:
             if env not in pythons:
-                pythons[env] = {'python': python,
-                                'version': version,
-                                'path': fullpath}
+                pythons[env] = info
 
     # Check that the specified environments have a functioning virtualenv:
     env_list = get_environments(conf)
