@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.3 (unreleased)
+0.3 (2014-10-30)
 ----------------
 
 - Now runs under Python 3, PyPy, PyPy3, Jython.
