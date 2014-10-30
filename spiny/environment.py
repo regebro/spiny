@@ -54,14 +54,18 @@ def python_info(fullpath):
             version_string = stderr
 
         version_info = version_string.strip().decode('ascii', errors='ignore')
+        parts = version_info.split()
+        python = parts[0]
+        version = parts[1]
+
         pypy = PYPY_VER_RE.search(version_info)
         if pypy:
-            python = 'PyPy'
+            if version[0] == '3':
+                # This is a Python 3 compatible version:
+                python = 'PyPy3'
+            else:
+                python = 'PyPy'
             version = pypy.groups()[0]
-        else:
-            parts = version_info.split()
-            python = parts[0]
-            version = parts[1]
 
     # Return all valid environment names
     env_version = LooseVersion(version).version

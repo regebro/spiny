@@ -77,6 +77,4 @@ Todo
 
 Things that desperately needs doing:
 
-  * Make sure that PyPy3 also works
-
   * Make the tests run under itself
