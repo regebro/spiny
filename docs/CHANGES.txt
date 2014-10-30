@@ -12,7 +12,10 @@ CHANGES
 
 - Now use subprocess32 under Python 2.
 
-- Will now run tests in parallell with multiprocessing.
+- Will now run tests in parallell with multiprocessing. A 'max-processes'
+  option in the [spiny] section will allow you to cap the processes if
+  you don't want to max your computer. Otherwise it will use as many processes
+  as multiprocessing will report cpu's.
 
 
 0.2 (2014-10-27)

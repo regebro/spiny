@@ -80,5 +80,3 @@ Things that desperately needs doing:
   * Make sure that PyPy3 also works
 
   * Make the tests run under itself
-
-  * Config for how many processes to use in parallell

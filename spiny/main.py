@@ -70,13 +70,15 @@ def setup_logging(verbose, quiet):
     logger.addHandler(handler)
 
 
-def run_all_tests(envnames, pythons, venv_dir, test_commands):
+def run_all_tests(envnames, pythons, venv_dir, test_commands, max_proc=None):
     """Run a list of commands in each virtualenv"""
 
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
 
     cpus = min(multiprocessing.cpu_count(), len(envnames))
+    if max_proc:
+        cpus = min(cpus, max_proc)
     logger.log(20, "Using %s parallel processes" % cpus)
     pool = multiprocessing.Pool(processes=cpus)
     results = pool.map(run_tests, [(envname, pythons[envname], venv_dir, test_commands) for envname in envnames])
@@ -264,7 +266,12 @@ def run(config_file, overrides):
     else:
         commands = config.get('spiny', 'test_commands').splitlines()
 
-    results = run_all_tests(envs, pythons, venv_dir, commands)
+    if config.has_option('spiny', 'max-processes'):
+        max_proc = int(config.get('spiny', 'max-processes'))
+    else:
+        max_proc = None
+
+    results = run_all_tests(envs, pythons, venv_dir, commands, max_proc)
 
     # Done
     for env in envs:
