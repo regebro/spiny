@@ -71,8 +71,38 @@ def setup_logging(verbose, quiet):
     logger.addHandler(handler)
 
 
-def run_all_tests(envnames, pythons, venv_dir, test_commands, max_proc=None):
+def run_all_tests(config):
     """Run a list of commands in each virtualenv"""
+
+    # Get the verified environments
+    pythons = environment.get_pythons(config)
+
+    # Install a virtualenv for each environment
+    if config.has_option('spiny', 'venv-dir'):
+        venv_dir = config.get('spiny', 'venv-dir')
+    else:
+        venv_dir = '.venv'
+    venv_dir = os.path.abspath(venv_dir)
+    envnames = environment.get_environments(config)
+
+    # Run tests
+    if not config.has_option('spiny', 'test-commands'):
+        test_commands = ['{python} setup.py test']
+    else:
+        test_commands = config.get('spiny', 'test-commands').splitlines()
+
+    if config.has_option('spiny', 'max-processes'):
+        max_proc = int(config.get('spiny', 'max-processes'))
+    else:
+        max_proc = None
+
+    project_data = projectdata.get_data('.')
+    requirements = []
+    requirements.extend(project_data.get('install_requires', []))
+    requirements.extend(project_data.get('setup_requires', []))
+    requirements.extend(project_data.get('tests_require', []))
+    requirements.extend(project_data.get('extras_require', {}).get('tests', []))
+    dependency_links = project_data.get('dependency_links', [])
 
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
@@ -82,26 +112,23 @@ def run_all_tests(envnames, pythons, venv_dir, test_commands, max_proc=None):
         cpus = min(cpus, max_proc)
     logger.log(20, "Using %s parallel processes" % cpus)
     pool = multiprocessing.Pool(processes=cpus)
-    results = pool.map(run_tests, [(envname, pythons[envname], venv_dir,
-                                    test_commands) for envname in envnames])
+    argslist = [(envname,
+                 pythons[envname],
+                 venv_dir,
+                 test_commands,
+                 requirements,
+                 dependency_links) for envname in envnames]
+    results = pool.map(run_tests, argslist)
 
     return dict(zip(envnames, results))
 
 
 def run_tests(args):
-    envname, envdict, venv_dir, test_commands = args
-    project_data = projectdata.get_data('.')
-    project_dir = os.path.abspath(os.path.curdir)
-
-    requirements = []
-    requirements.extend(project_data.get('install_requires', []))
-    requirements.extend(project_data.get('setup_requires', []))
-    requirements.extend(project_data.get('tests_require', []))
-    requirements.extend(project_data.get('extras_require', {}).get('tests', []))
-    dependency_links = project_data.get('dependency_links', [])
+    envname, envdict, venv_dir, test_commands, requirements, dependency_links = args
 
     exepath = envdict['path']
     envpath = os.path.join(venv_dir, envname)
+    project_dir = os.path.abspath(os.path.curdir)
 
     if envdict['virtualenv'] == 'internal':
         # Internal means use the virtualenv for the relevant Python
@@ -256,32 +283,10 @@ def run(config_file, overrides):
             config.add_section(section)
         config.set(section.strip(), option.strip(), value.strip())
 
-    # Get the verified environments
-    pythons = environment.get_pythons(config)
-
-    # Install a virtualenv for each environment
-    if config.has_option('spiny', 'venv-dir'):
-        venv_dir = config.get('spiny', 'venv-dir')
-    else:
-        venv_dir = '.venv'
-    venv_dir = os.path.abspath(venv_dir)
-    envs = environment.get_environments(config)
-
-    # Run tests
-    if not config.has_option('spiny', 'test-commands'):
-        commands = ['{python} setup.py test']
-    else:
-        commands = config.get('spiny', 'test-commands').splitlines()
-
-    if config.has_option('spiny', 'max-processes'):
-        max_proc = int(config.get('spiny', 'max-processes'))
-    else:
-        max_proc = None
-
-    results = run_all_tests(envs, pythons, venv_dir, commands, max_proc)
+    results = run_all_tests(config)
 
     # Done
-    for env in envs:
+    for env in sorted(results):
         if results.get(env):
             logger.log(40, "ERROR: " + results[env])
         else:

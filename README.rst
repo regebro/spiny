@@ -13,6 +13,7 @@ something that is less complex, and fixes a couple of problems with Tox.
 Most notably, with Spiny, Python does not have to be on the path, it can
 install versions of Python other than the one your installed version of
 virtualenv happens to support, and it does not always call setup.py.
+It also will run the tests in parallel.
 
 There is no guarantee that Spiny's features will not end up in Tox.
 
