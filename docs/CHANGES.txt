@@ -4,7 +4,11 @@ CHANGES
 0.4 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Added support for requirements.txt.
+
+- Added parameters to skip executing setup.py.
+
+- Added a setup-commands parameter to override how the virtualenv is made.
 
 
 0.3 (2014-10-30)

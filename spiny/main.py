@@ -77,32 +77,55 @@ def run_all_tests(config):
     # Get the verified environments
     pythons = environment.get_pythons(config)
 
-    # Install a virtualenv for each environment
+    # Get the location of environments.
     if config.has_option('spiny', 'venv-dir'):
         venv_dir = config.get('spiny', 'venv-dir')
     else:
         venv_dir = '.venv'
     venv_dir = os.path.abspath(venv_dir)
+
+    # Get the list of environments to be used:
     envnames = environment.get_environments(config)
 
-    # Run tests
-    if not config.has_option('spiny', 'test-commands'):
-        test_commands = ['{python} setup.py test']
+    # Get the setup commands:
+    if config.has_option('spiny', 'setup-commands'):
+        setup_commands = config.get('spiny', 'setup-commands').splitlines()
     else:
+        setup_commands = None
+
+    # Get the test commands:
+    if config.has_option('spiny', 'test-commands'):
         test_commands = config.get('spiny', 'test-commands').splitlines()
+    else:
+        test_commands = ['{python} setup.py test']
 
     if config.has_option('spiny', 'max-processes'):
         max_proc = int(config.get('spiny', 'max-processes'))
     else:
         max_proc = None
 
-    project_data = projectdata.get_data('.')
+    # Get requirements from setup.py
     requirements = []
-    requirements.extend(project_data.get('install_requires', []))
-    requirements.extend(project_data.get('setup_requires', []))
-    requirements.extend(project_data.get('tests_require', []))
-    requirements.extend(project_data.get('extras_require', {}).get('tests', []))
-    dependency_links = project_data.get('dependency_links', [])
+    if (config.has_option('spiny', 'use-setup-py') and
+        config.get('spiny', 'use-setup-py')):
+        # Use of setup.py is disabled.
+        dependency_links = []
+    else:
+        project_data = projectdata.get_data('.')
+        requirements.extend(project_data.get('install_requires', []))
+        requirements.extend(project_data.get('setup_requires', []))
+        requirements.extend(project_data.get('tests_require', []))
+        requirements.extend(project_data.get('extras_require', {}).get('tests', []))
+        dependency_links = project_data.get('dependency_links', [])
+
+    # Get even more requirements from requirements.txt.
+    if (config.has_option('spiny', 'use-requirements-txt') and
+        config.get('spiny', 'use-requirements-tx')):
+        # Use of requirements.txt is disabled.
+        pass  # Yes, I want it like this, because it's clearer.
+    else:
+        with open('requirements.txt', 'rt') as reqtxt:
+            requirements.extend(reqtxt.readlines())
 
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
@@ -115,6 +138,7 @@ def run_all_tests(config):
     argslist = [(envname,
                  pythons[envname],
                  venv_dir,
+                 setup_commands,
                  test_commands,
                  requirements,
                  dependency_links) for envname in envnames]
@@ -124,33 +148,37 @@ def run_all_tests(config):
 
 
 def run_tests(args):
-    envname, envdict, venv_dir, test_commands, requirements, dependency_links = args
+    envname, envdict, venv_dir, setup_commands, test_commands, requirements, dependency_links = args
 
     exepath = envdict['path']
     envpath = os.path.join(venv_dir, envname)
     project_dir = os.path.abspath(os.path.curdir)
 
-    if envdict['virtualenv'] == 'internal':
-        # Internal means use the virtualenv for the relevant Python
-        command = [exepath, '-m', 'virtualenv', '-v', envpath]
+    if not setup_commands:
+        if envdict['virtualenv'] == 'internal':
+            # Internal means use the virtualenv for the relevant Python
+            setup_commands = [[exepath, '-m', 'virtualenv', '-v', envpath]]
+        else:
+            # External means use the virtualenv for the current Python
+            setup_commands = [[sys.executable, '-m', 'virtualenv', '-v',
+                               '-p', exepath, envpath]]
     else:
-        # External means use the virtualenv for the current Python
-        command = [sys.executable, '-m', 'virtualenv', '-v',
-                   '-p', exepath, envpath]
+        setup_commands = [command.split() for command in setup_commands]
 
     logger.log(30, 'Install/update virtualenv for %s' % envname)
-    logger.log(10, 'Using command: %s' % ' '.join(command))
-    with subprocess.Popen(command,
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE) as process:
-        process.wait()
-        logger.log(30, process.stderr.read())
-        logger.log(20, process.stdout.read())
-        if process.returncode != 0:
-            # This failed somehow
-            msg = "Installing/updating virtualenv for %s failed!" % envname
-            logger.log(30, msg)
-            return msg
+    for command in setup_commands:
+        logger.log(10, 'Using command: %s' % ' '.join(command))
+        with subprocess.Popen(command,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as process:
+            process.wait()
+            logger.log(30, process.stderr.read())
+            logger.log(20, process.stdout.read())
+            if process.returncode != 0:
+                # This failed somehow
+                msg = "Installing/updating virtualenv for %s failed!" % envname
+                logger.log(30, msg)
+                return msg
 
     # Install dependencies:
     pip_path = os.path.join(envpath, 'bin', 'pip')
@@ -166,13 +194,17 @@ def run_tests(args):
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE) as process:
         process.wait()
-        logger.log(30, process.stderr.read())
-        logger.log(20, process.stdout.read())
+        logger.log(30, process.stderr.read())  # Log stderr only if verbose output.
         if process.returncode != 0:
-            # This failed somehow
+            # This failed somehow.
             msg = "Installing/updating dependencies for %s failed!" % envname
             logger.log(30, msg)
+            # pip has the error on stdout. Log it on normal level.
+            logger.log(30, process.stdout.read())
             return msg
+        else:
+            # Log successful stdout only if output level is verbse.
+            logger.log(20, process.stdout.read())
 
     # Run tests:
     logger.log(30, 'Running tests for %s' % envname)
@@ -276,7 +308,7 @@ def run(config_file, overrides):
     for override in overrides:
         if ':' not in override or '=' not in override:
             raise ValueError('%s is not a valid config variable. '
-                             'It should be "section:variable=value"')
+                             'It should be "section:variable=value"' % override)
         section, rest = override.split(':', 1)
         option, value = rest.split('=', 1)
         if not config.has_section(section):
