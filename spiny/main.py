@@ -107,7 +107,8 @@ def run_all_tests(config):
     # Get requirements from setup.py
     requirements = []
     if (config.has_option('spiny', 'use-setup-py') and
-        config.get('spiny', 'use-setup-py')):
+        config.get('spiny', 'use-setup-py').lower() in
+        ['false', 'off', '0', 'no']):
         # Use of setup.py is disabled.
         dependency_links = []
     else:
@@ -120,12 +121,14 @@ def run_all_tests(config):
 
     # Get even more requirements from requirements.txt.
     if (config.has_option('spiny', 'use-requirements-txt') and
-        config.get('spiny', 'use-requirements-tx')):
+        config.get('spiny', 'use-requirements-txt').lower() in
+        ['false', 'off', '0', 'no']):
         # Use of requirements.txt is disabled.
         pass  # Yes, I want it like this, because it's clearer.
     else:
-        with open('requirements.txt', 'rt') as reqtxt:
-            requirements.extend(reqtxt.readlines())
+        if os.path.isfile('requirements.txt'):
+            with open('requirements.txt', 'rt') as reqtxt:
+                requirements.extend(reqtxt.readlines())
 
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
