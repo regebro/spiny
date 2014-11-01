@@ -10,6 +10,12 @@ CHANGES
 
 - Added a setup-commands parameter to override how the virtualenv is made.
 
+- The -e parameter now actually works.
+
+- The information about the python execs is now cached. This speeds up
+  startup, a lot, fetching the Python environments goes from around 5
+  seconds to less than a tenth.
+
 
 0.3 (2014-10-30)
 ----------------

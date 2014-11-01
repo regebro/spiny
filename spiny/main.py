@@ -74,9 +74,6 @@ def setup_logging(verbose, quiet):
 def run_all_tests(config):
     """Run a list of commands in each virtualenv"""
 
-    # Get the verified environments
-    pythons = environment.get_pythons(config)
-
     # Get the location of environments.
     if config.has_option('spiny', 'venv-dir'):
         venv_dir = config.get('spiny', 'venv-dir')
@@ -85,6 +82,7 @@ def run_all_tests(config):
     venv_dir = os.path.abspath(venv_dir)
 
     # Get the list of environments to be used:
+    pythons = environment.get_pythons(config)
     envnames = environment.get_environments(config)
 
     # Get the setup commands:
