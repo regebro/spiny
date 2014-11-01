@@ -185,3 +185,5 @@ Things that needs doing:
 
   * Add commands per environment, enabling things like a pep8 environment
     that checks for pep8 compliance, etc.
+
+  * Windows support. Maybe.

@@ -1,6 +1,7 @@
 import logging
 import os
 import os.path
+import pickle
 import re
 import string
 import sys
@@ -36,9 +37,14 @@ def get_environments(conf):
                                                 len(e) for x in environments])]
 
 
-def python_info(fullpath):
+def python_info(fullpath, cache):
     # Figure out the version of the Python exe
     logger.log(10, 'Getting Python version for %s' % fullpath)
+    if fullpath in cache:
+        mtime = os.stat(fullpath).st_mtime
+        if mtime == cache[fullpath]['mtime']:
+            return cache[fullpath]
+
     with subprocess.Popen([fullpath, '-V'],
                           stderr=subprocess.PIPE,
                           stdout=subprocess.PIPE) as process:
@@ -75,11 +81,15 @@ def python_info(fullpath):
     for v in env_version[1:]:
         environment.append('%s.%s' % (environment[-1], v))
 
-    return {'python': python,
+    info = {'python': python,
             'version': version,
             'path': fullpath,
             'execname': os.path.split(fullpath)[-1],
-            'environments': environment}
+            'environments': environment,
+            'mtime': os.stat(fullpath).st_mtime}
+
+    cache[fullpath] = info
+    return info
 
 
 def list_pythons_on_path(path):
@@ -146,6 +156,22 @@ def can_use_current_virtualenv(exepath):
 
 
 def get_pythons(conf):
+    # Open cache file, if it exists:
+    if conf.has_option('spiny', 'cache-file'):
+        cache_file = conf.get('spiny', 'cache-file')
+    else:
+        cache_file = '~/.cache/spiny/pythons.cache'
+
+    cache_file = os.path.expanduser(cache_file)
+
+    cache = {}
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, 'rb') as infile:
+                cache = pickle.load(infile)
+        except (EOFError, OSError) as e:
+            logger.log(30, "Could not load info cache from %s" % cache_file, exc_info=1)
+
     pythons = {}
 
     # Make sure we have the Python versions required:
@@ -155,7 +181,7 @@ def get_pythons(conf):
                 # Not executable
                 raise EnvironmentError('%s is not executable' % path)
 
-            info = python_info(path)
+            info = python_info(path, cache)
             if python not in info['environments']:
                 raise EnvironmentError(
                     'Executable %s is not the given version %s' % (path, python))
@@ -168,8 +194,7 @@ def get_pythons(conf):
     # Add the Python versions in the path for versions that are not specified:
     path = os.environ['PATH']
     for fullpath in list_pythons_on_path(path):
-
-        info = python_info(fullpath)
+        info = python_info(fullpath, cache)
         for env in info['environments']:
             if env not in pythons:
                 pythons[env] = info
@@ -180,6 +205,9 @@ def get_pythons(conf):
         if env not in pythons:
             raise EnvironmentError('Could not find an executable for %s' % env)
 
+        if 'virtualenv' in pythons[env]:
+            # We have already checked the virtualenv for this.
+            continue
         exepath = pythons[env]['path']
         if not has_virtualenv(exepath):
             # Something went wrong. Most likely there is no virtualenv module
@@ -196,5 +224,15 @@ def get_pythons(conf):
 
         else:
             pythons[env]['virtualenv'] = 'internal'
+
+    try:
+        cache_dir = os.path.split(cache_file)[0]
+        if not os.path.isdir(cache_dir):
+            os.mkdir(cache_dir)
+
+        with open(cache_file, 'wb') as outfile:
+            cache = pickle.dump(cache, outfile)
+    except OSError as e:
+        logger.log(30, "Could not save Python info cache file %s" % cache_file, exc_info=1)
 
     return pythons

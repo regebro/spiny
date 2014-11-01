@@ -292,6 +292,8 @@ def main():
 
     setup_logging(args.verbose, args.quiet)
 
+    if args.envlist:
+        args.configvar.append('spiny:environments=' + args.envlist.replace(',', ' '))
     return run(args.config, args.configvar)
 
 
