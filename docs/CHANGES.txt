@@ -16,6 +16,11 @@ CHANGES
   startup, a lot, fetching the Python environments goes from around 5
   seconds to less than a tenth.
 
+- A profile of each virtualenv is now saved in the virtualenv, containing
+  it's name, the full path of the Python exe, and the installed requirements.
+  A virtualenv will now only be updated if this has changed since the last run.
+  This also speeds up tests runs a lot in the typical case.
+
 
 0.3 (2014-10-30)
 ----------------
