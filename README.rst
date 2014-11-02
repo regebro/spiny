@@ -107,20 +107,23 @@ following configuration options are supported:
     Defaults to the number of CPU's you have.
 
   * **test-commands**: The commands used to run the tests. You can have
-    several lines of commands. Defaults to ``{python} setup.py test``. There
+    several lines of commands. Defaults to ``{envpython} setup.py test``. There
     are a few variables that you can use in the commands that will be replaced:
 
-    * ``{python}`` will be replaced with the full path to the Python
-      executable
+    * ``{envpython}`` will be replaced with the full path to the Python
+      executable in the virtualenv
+
+    * ``{basepython}`` will be replaced with the full path to the Python
+      executable the virtualenv is created from
 
     * ``{envdir}`` will be replaced with the full path to the virtualenv
       directory.
 
-    * ``{project_dir}`` will be replaced with the full path to the directory
+    * ``{projectdir}`` will be replaced with the full path to the directory
       of the Python project (ie, the current directory)
 
   * **setup-commands**: The commands used to create the virtualenv. The default
-    for this varies, but it boils down to ``{python} -m virtualenv {envdir}``.
+    for this varies, but it boils down to ``{envpython} -m virtualenv {envdir}``.
 
   * **use-setup-py**: If requirements data from ``setup.py`` should be used to
     gather requirements. This means ``setup.py`` needs to exist, and be
@@ -139,8 +142,8 @@ Example::
 
   venv-dir = .venv
 
-  test-commands = {python} something.py magic
-                  {python} setup.py test
+  test-commands = {envpython} something.py magic
+                  {envpython} setup.py test
 
   max-processes = 3
 

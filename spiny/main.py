@@ -96,7 +96,7 @@ def run_all_tests(config):
     if config.has_option('spiny', 'test-commands'):
         test_commands = filter(None, config.get('spiny', 'test-commands').splitlines())
     else:
-        test_commands = ['{python} setup.py test']
+        test_commands = ['{envpython} setup.py test']
 
     if config.has_option('spiny', 'max-processes'):
         max_proc = int(config.get('spiny', 'max-processes'))
@@ -129,8 +129,15 @@ def run_all_tests(config):
             with open('requirements.txt', 'rt') as reqtxt:
                 requirements.extend(reqtxt.readlines())
 
+    if config.has_option('spiny', 'changedir'):
+        curdir = config.get('spiny', 'changedir')
+    else:
+        curdir = None
+
     if not os.path.exists(venv_dir):
         os.mkdir(venv_dir)
+
+    projectdir = os.path.abspath(os.path.curdir)
 
     cpus = min(multiprocessing.cpu_count(), len(envnames))
     if max_proc:
@@ -143,7 +150,9 @@ def run_all_tests(config):
                  setup_commands,
                  test_commands,
                  requirements,
-                 dependency_links) for envname in envnames]
+                 dependency_links,
+                 projectdir,
+                 curdir) for envname in envnames]
     results = pool.map(run_tests, argslist)
 
     return dict(zip(envnames, results))
@@ -151,11 +160,25 @@ def run_all_tests(config):
 
 def run_tests(args):
     try:
-        envname, envdict, venv_dir, setup_commands, test_commands, requirements, dependency_links = args
+        (envname, envdict, venv_dir, setup_commands, test_commands,
+         requirements, dependency_links, projectdir, curdir) = args
 
-        exepath = envdict['path']
-        envdir = os.path.join(venv_dir, envname)
-        project_dir = os.path.abspath(os.path.curdir)
+        exepath = envdict['path']  # Actual Python exe
+        envdir = os.path.join(venv_dir, envname)  # virtualenv dir
+        python = os.path.join(envdir, 'bin', envdict['execname'])  # Virtualenv python
+
+        env_parameters = {
+            'basepython': exepath,
+            'envdir': envdir,
+            'envpython': python,
+            'projectdir': projectdir,
+        }
+
+        # Expand the current directory
+        if curdir is not None:
+            curdir = curdir.format(**env_parameters)
+        else:
+            curdir = projectdir
 
         # Create a "profile"" of this virtualenv, include name, the python exe and requirements.
         venv_profile = '\n'.join([envname, exepath, '\n'.join(sorted(requirements))])
@@ -179,48 +202,53 @@ def run_tests(args):
                     setup_commands = [[sys.executable, '-m', 'virtualenv', '-v',
                                        '-p', exepath, envdir]]
             else:
-                setup_commands = [command.split() for command in setup_commands]
+                setup_commands = [command.format(**env_parameters).split() for command in setup_commands]
 
             logger.log(30, 'Install/update virtualenv for %s' % envname)
             for command in setup_commands:
+
+                # Switch to curdir, if it exists.
+                if curdir is not None and os.path.isdir(curdir):
+                    os.chdir(curdir)
+
                 logger.log(10, 'Using command: %s' % ' '.join(command))
                 with subprocess.Popen(command,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE) as process:
+                                      ) as process:
                     process.wait()
-                    logger.log(30, process.stderr.read())
-                    logger.log(20, process.stdout.read())
+                    #logger.log(30, process.stderr.read())
+                    #logger.log(20, process.stdout.read())
                     if process.returncode != 0:
                         # This failed somehow
                         msg = "Installing/updating virtualenv for %s failed!" % envname
                         logger.log(30, msg)
                         return msg
 
-            # Install dependencies:
-            pip_path = os.path.join(envdir, 'bin', 'pip')
-            parameters = '-f '.join(dependency_links).split()
-            if envdict['python'] == 'Python' and envdict['version'] < '2.6':
-                # Using 2.5 or worse means no SSL.
-                parameters.append('--insecure')
+            if requirements:
+                # Install dependencies:
+                pip_path = os.path.join(envdir, 'bin', 'pip')
+                parameters = '-f '.join(dependency_links).split()
+                if envdict['python'] == 'Python' and envdict['version'] < '2.6':
+                    # Using 2.5 or worse means no SSL.
+                    parameters.append('--insecure')
 
-            command = [pip_path] + parameters + ['install'] + requirements
+                command = [pip_path] + parameters + ['install'] + requirements
 
-            logger.log(10, 'Install dependencies with command: %s' % ' '.join(command))
-            with subprocess.Popen(command,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE) as process:
-                process.wait()
-                logger.log(30, process.stderr.read())  # Log stderr only if verbose output.
-                if process.returncode != 0:
-                    # This failed somehow.
-                    msg = "Installing/updating dependencies for %s failed!" % envname
-                    logger.log(30, msg)
-                    # pip has the error on stdout. Log it on normal level.
-                    logger.log(30, process.stdout.read())
-                    return msg
-                else:
-                    # Log successful stdout only if output level is verbse.
-                    logger.log(20, process.stdout.read())
+                logger.log(10, 'Install dependencies with command: %s' % ' '.join(command))
+                with subprocess.Popen(command,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE) as process:
+                    process.wait()
+                    logger.log(30, process.stderr.read())  # Log stderr only if verbose output.
+                    if process.returncode != 0:
+                        # This failed somehow.
+                        msg = "Installing/updating dependencies for %s failed!" % envname
+                        logger.log(30, msg)
+                        # pip has the error on stdout. Log it on normal level.
+                        logger.log(30, process.stdout.read())
+                        return msg
+                    else:
+                        # Log successful stdout only if output level is verbse.
+                        logger.log(20, process.stdout.read())
 
             # Save the venv information:
             with open(profile_path, 'wb') as profile:
@@ -228,13 +256,9 @@ def run_tests(args):
 
         # Run tests:
         logger.log(30, 'Running tests for %s' % envname)
-        envdir = os.path.join(venv_dir, envname)
-        python = os.path.join(envdir, 'bin', envdict['execname'])
 
         for command in test_commands:
-            command = command.strip().format(envdir=envdir,
-                                             python=python,
-                                             project_dir=project_dir)
+            command = command.strip().format(**env_parameters)
             logger.log(10, 'Using command: %s' % command)
             with subprocess.Popen(command.split(),
                                   stdout=subprocess.PIPE,

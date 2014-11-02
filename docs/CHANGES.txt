@@ -6,7 +6,9 @@ CHANGES
 
 - CTRL-C will now kill the program.
 
-- Renamed {envpath} to {envdir}, it's a better name.
+- Renamed {envpath} to {envdir}, {python} to {envpython} and {project_dir} to
+  {projectdir}. Also added {basepython} to the Python version used to install
+  the virtual env.
 
 
 0.4 (2014-11-01)
