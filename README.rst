@@ -132,6 +132,9 @@ following configuration options are supported:
   * **use-requirements-txt**: If requirements data from ``requiremenets.txt``
     should be used to gather requirements. Defaults to ``true``.
 
+  * **changedir**: A directory to change to before running the tests.
+    Variables from test-commands are usable.
+
 
 Example::
 

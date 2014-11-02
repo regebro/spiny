@@ -213,10 +213,11 @@ def run_tests(args):
 
                 logger.log(10, 'Using command: %s' % ' '.join(command))
                 with subprocess.Popen(command,
-                                      ) as process:
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE) as process:
                     process.wait()
-                    #logger.log(30, process.stderr.read())
-                    #logger.log(20, process.stdout.read())
+                    logger.log(30, process.stderr.read())
+                    logger.log(20, process.stdout.read())
                     if process.returncode != 0:
                         # This failed somehow
                         msg = "Installing/updating virtualenv for %s failed!" % envname
