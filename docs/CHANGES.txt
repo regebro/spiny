@@ -4,7 +4,7 @@ CHANGES
 0.5 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- CTRL-C will now kill the program.
 
 
 0.4 (2014-11-01)

@@ -4,6 +4,7 @@ import multiprocessing
 import os
 import os.path
 import pkg_resources
+import signal
 import sys
 
 if sys.version_info < (3,):
@@ -143,109 +144,112 @@ def run_all_tests(config):
                  test_commands,
                  requirements,
                  dependency_links) for envname in envnames]
-    import pdb;pdb.set_trace()
     results = pool.map(run_tests, argslist)
 
     return dict(zip(envnames, results))
 
 
 def run_tests(args):
-    envname, envdict, venv_dir, setup_commands, test_commands, requirements, dependency_links = args
+    try:
+        envname, envdict, venv_dir, setup_commands, test_commands, requirements, dependency_links = args
 
-    exepath = envdict['path']
-    envpath = os.path.join(venv_dir, envname)
-    project_dir = os.path.abspath(os.path.curdir)
+        exepath = envdict['path']
+        envpath = os.path.join(venv_dir, envname)
+        project_dir = os.path.abspath(os.path.curdir)
 
-    # Create a "profile"" of this virtualenv, include name, the python exe and requirements.
-    venv_profile = '\n'.join([envname, exepath, '\n'.join(sorted(requirements))])
-    # Check if there is an existing venv, and in that case read in it's profile:
-    profile_path = os.path.join(envpath, '.spiny-profile')
-    if os.path.exists(profile_path):
-        with open(profile_path, 'rb') as profile:
-            installed_profile = profile.read()
-    else:
-        installed_profile = ''
-
-    if venv_profile != installed_profile:
-        # We need to install the virtualenv or update the requirements.
-
-        if not setup_commands:
-            if envdict['virtualenv'] == 'internal':
-                # Internal means use the virtualenv for the relevant Python
-                setup_commands = [[exepath, '-m', 'virtualenv', '-v', envpath]]
-            else:
-                # External means use the virtualenv for the current Python
-                setup_commands = [[sys.executable, '-m', 'virtualenv', '-v',
-                                   '-p', exepath, envpath]]
+        # Create a "profile"" of this virtualenv, include name, the python exe and requirements.
+        venv_profile = '\n'.join([envname, exepath, '\n'.join(sorted(requirements))])
+        # Check if there is an existing venv, and in that case read in it's profile:
+        profile_path = os.path.join(envpath, '.spiny-profile')
+        if os.path.exists(profile_path):
+            with open(profile_path, 'rb') as profile:
+                installed_profile = profile.read()
         else:
-            setup_commands = [command.split() for command in setup_commands]
+            installed_profile = ''
 
-        logger.log(30, 'Install/update virtualenv for %s' % envname)
-        for command in setup_commands:
-            logger.log(10, 'Using command: %s' % ' '.join(command))
+        if venv_profile != installed_profile:
+            # We need to install the virtualenv or update the requirements.
+
+            if not setup_commands:
+                if envdict['virtualenv'] == 'internal':
+                    # Internal means use the virtualenv for the relevant Python
+                    setup_commands = [[exepath, '-m', 'virtualenv', '-v', envpath]]
+                else:
+                    # External means use the virtualenv for the current Python
+                    setup_commands = [[sys.executable, '-m', 'virtualenv', '-v',
+                                       '-p', exepath, envpath]]
+            else:
+                setup_commands = [command.split() for command in setup_commands]
+
+            logger.log(30, 'Install/update virtualenv for %s' % envname)
+            for command in setup_commands:
+                logger.log(10, 'Using command: %s' % ' '.join(command))
+                with subprocess.Popen(command,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE) as process:
+                    process.wait()
+                    logger.log(30, process.stderr.read())
+                    logger.log(20, process.stdout.read())
+                    if process.returncode != 0:
+                        # This failed somehow
+                        msg = "Installing/updating virtualenv for %s failed!" % envname
+                        logger.log(30, msg)
+                        return msg
+
+            # Install dependencies:
+            pip_path = os.path.join(envpath, 'bin', 'pip')
+            parameters = '-f '.join(dependency_links).split()
+            if envdict['python'] == 'Python' and envdict['version'] < '2.6':
+                # Using 2.5 or worse means no SSL.
+                parameters.append('--insecure')
+
+            command = [pip_path] + parameters + ['install'] + requirements
+
+            logger.log(10, 'Install dependencies with command: %s' % ' '.join(command))
             with subprocess.Popen(command,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as process:
                 process.wait()
-                logger.log(30, process.stderr.read())
-                logger.log(20, process.stdout.read())
+                logger.log(30, process.stderr.read())  # Log stderr only if verbose output.
                 if process.returncode != 0:
-                    # This failed somehow
-                    msg = "Installing/updating virtualenv for %s failed!" % envname
+                    # This failed somehow.
+                    msg = "Installing/updating dependencies for %s failed!" % envname
                     logger.log(30, msg)
+                    # pip has the error on stdout. Log it on normal level.
+                    logger.log(30, process.stdout.read())
+                    return msg
+                else:
+                    # Log successful stdout only if output level is verbse.
+                    logger.log(20, process.stdout.read())
+
+            # Save the venv information:
+            with open(profile_path, 'wb') as profile:
+                profile.write(venv_profile)
+
+        # Run tests:
+        logger.log(30, 'Running tests for %s' % envname)
+        envpath = os.path.join(venv_dir, envname)
+        python = os.path.join(envpath, 'bin', envdict['execname'])
+
+        for command in test_commands:
+            command = command.strip().format(envpath=envpath,
+                                             python=python,
+                                             project_dir=project_dir)
+            logger.log(10, 'Using command: %s' % command)
+            with subprocess.Popen(command.split(),
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE) as process:
+                process.wait()
+                logger.log(30, process.stderr.read())
+                logger.log(30, process.stdout.read())
+                if process.returncode != 0:
+                    msg = "Tests failed for %s!" % envname
                     return msg
 
-        # Install dependencies:
-        pip_path = os.path.join(envpath, 'bin', 'pip')
-        parameters = '-f '.join(dependency_links).split()
-        if envdict['python'] == 'Python' and envdict['version'] < '2.6':
-            # Using 2.5 or worse means no SSL.
-            parameters.append('--insecure')
+        return None
 
-        command = [pip_path] + parameters + ['install'] + requirements
-
-        logger.log(10, 'Install dependencies with command: %s' % ' '.join(command))
-        with subprocess.Popen(command,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE) as process:
-            process.wait()
-            logger.log(30, process.stderr.read())  # Log stderr only if verbose output.
-            if process.returncode != 0:
-                # This failed somehow.
-                msg = "Installing/updating dependencies for %s failed!" % envname
-                logger.log(30, msg)
-                # pip has the error on stdout. Log it on normal level.
-                logger.log(30, process.stdout.read())
-                return msg
-            else:
-                # Log successful stdout only if output level is verbse.
-                logger.log(20, process.stdout.read())
-
-        # Save the venv information:
-        with open(profile_path, 'wb') as profile:
-            profile.write(venv_profile)
-
-    # Run tests:
-    logger.log(30, 'Running tests for %s' % envname)
-    envpath = os.path.join(venv_dir, envname)
-    python = os.path.join(envpath, 'bin', envdict['execname'])
-
-    for command in test_commands:
-        command = command.strip().format(envpath=envpath,
-                                         python=python,
-                                         project_dir=project_dir)
-        logger.log(10, 'Using command: %s' % command)
-        with subprocess.Popen(command.split(),
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE) as process:
-            process.wait()
-            logger.log(30, process.stderr.read())
-            logger.log(30, process.stdout.read())
-            if process.returncode != 0:
-                msg = "Tests failed for %s!" % envname
-                return msg
-
-    return None
+    except KeyboardInterrupt:
+        return "Tests interrupted by CTRL-C"
 
 
 def main():
