@@ -10,6 +10,10 @@ CHANGES
   {projectdir}. Also added {basepython} to the Python version used to install
   the virtual env.
 
+- Various changes to make custom commands more stable and flexible.
+
+- Added a changedir option to the config.
+
 
 0.4 (2014-11-01)
 ----------------
