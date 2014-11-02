@@ -87,13 +87,13 @@ def run_all_tests(config):
 
     # Get the setup commands:
     if config.has_option('spiny', 'setup-commands'):
-        setup_commands = config.get('spiny', 'setup-commands').splitlines()
+        setup_commands = filter(None, config.get('spiny', 'setup-commands').splitlines())
     else:
         setup_commands = None
 
     # Get the test commands:
     if config.has_option('spiny', 'test-commands'):
-        test_commands = config.get('spiny', 'test-commands').splitlines()
+        test_commands = filter(None, config.get('spiny', 'test-commands').splitlines())
     else:
         test_commands = ['{python} setup.py test']
 
@@ -143,6 +143,7 @@ def run_all_tests(config):
                  test_commands,
                  requirements,
                  dependency_links) for envname in envnames]
+    import pdb;pdb.set_trace()
     results = pool.map(run_tests, argslist)
 
     return dict(zip(envnames, results))
