@@ -154,13 +154,13 @@ def run_tests(args):
         envname, envdict, venv_dir, setup_commands, test_commands, requirements, dependency_links = args
 
         exepath = envdict['path']
-        envpath = os.path.join(venv_dir, envname)
+        envdir = os.path.join(venv_dir, envname)
         project_dir = os.path.abspath(os.path.curdir)
 
         # Create a "profile"" of this virtualenv, include name, the python exe and requirements.
         venv_profile = '\n'.join([envname, exepath, '\n'.join(sorted(requirements))])
         # Check if there is an existing venv, and in that case read in it's profile:
-        profile_path = os.path.join(envpath, '.spiny-profile')
+        profile_path = os.path.join(envdir, '.spiny-profile')
         if os.path.exists(profile_path):
             with open(profile_path, 'rb') as profile:
                 installed_profile = profile.read()
@@ -173,11 +173,11 @@ def run_tests(args):
             if not setup_commands:
                 if envdict['virtualenv'] == 'internal':
                     # Internal means use the virtualenv for the relevant Python
-                    setup_commands = [[exepath, '-m', 'virtualenv', '-v', envpath]]
+                    setup_commands = [[exepath, '-m', 'virtualenv', '-v', envdir]]
                 else:
                     # External means use the virtualenv for the current Python
                     setup_commands = [[sys.executable, '-m', 'virtualenv', '-v',
-                                       '-p', exepath, envpath]]
+                                       '-p', exepath, envdir]]
             else:
                 setup_commands = [command.split() for command in setup_commands]
 
@@ -197,7 +197,7 @@ def run_tests(args):
                         return msg
 
             # Install dependencies:
-            pip_path = os.path.join(envpath, 'bin', 'pip')
+            pip_path = os.path.join(envdir, 'bin', 'pip')
             parameters = '-f '.join(dependency_links).split()
             if envdict['python'] == 'Python' and envdict['version'] < '2.6':
                 # Using 2.5 or worse means no SSL.
@@ -228,11 +228,11 @@ def run_tests(args):
 
         # Run tests:
         logger.log(30, 'Running tests for %s' % envname)
-        envpath = os.path.join(venv_dir, envname)
-        python = os.path.join(envpath, 'bin', envdict['execname'])
+        envdir = os.path.join(venv_dir, envname)
+        python = os.path.join(envdir, 'bin', envdict['execname'])
 
         for command in test_commands:
-            command = command.strip().format(envpath=envpath,
+            command = command.strip().format(envdir=envdir,
                                              python=python,
                                              project_dir=project_dir)
             logger.log(10, 'Using command: %s' % command)

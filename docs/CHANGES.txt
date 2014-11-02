@@ -6,6 +6,8 @@ CHANGES
 
 - CTRL-C will now kill the program.
 
+- Renamed {envpath} to {envdir}, it's a better name.
+
 
 0.4 (2014-11-01)
 ----------------

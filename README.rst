@@ -113,14 +113,14 @@ following configuration options are supported:
     * ``{python}`` will be replaced with the full path to the Python
       executable
 
-    * ``{envpath}`` will be replaced with the full path to the virtualenv
+    * ``{envdir}`` will be replaced with the full path to the virtualenv
       directory.
 
     * ``{project_dir}`` will be replaced with the full path to the directory
       of the Python project (ie, the current directory)
 
   * **setup-commands**: The commands used to create the virtualenv. The default
-    for this varies, but it boils down to ``{python} -m virtualenv {envpath}``.
+    for this varies, but it boils down to ``{python} -m virtualenv {envdir}``.
 
   * **use-setup-py**: If requirements data from ``setup.py`` should be used to
     gather requirements. This means ``setup.py`` needs to exist, and be
