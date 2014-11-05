@@ -15,6 +15,8 @@ install versions of Python other than the one your installed version of
 virtualenv happens to support, and it does not always call setup.py.
 It also will run the tests in parallel.
 
+Major feature: For the common use case it needs no configuration.
+
 There is no guarantee that Spiny's features will not end up in Tox.
 
 
