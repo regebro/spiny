@@ -14,6 +14,9 @@ CHANGES
 
 - Added a changedir option to the config.
 
+- You can now run tests for Pythons that does not support any version
+  of virtualenv, such as Python 2.3 and earlier.
+
 
 0.4 (2014-11-01)
 ----------------

@@ -153,7 +153,8 @@ def run_all_tests(config):
                  dependency_links,
                  projectdir,
                  curdir) for envname in envnames]
-    results = pool.map(run_tests, argslist)
+    #results = pool.map(run_tests, argslist)
+    results = [run_tests(x) for x in argslist]
 
     return dict(zip(envnames, results))
 
@@ -164,8 +165,13 @@ def run_tests(args):
          requirements, dependency_links, projectdir, curdir) = args
 
         exepath = envdict['path']  # Actual Python exe
-        envdir = os.path.join(venv_dir, envname)  # virtualenv dir
-        python = os.path.join(envdir, 'bin', envdict['execname'])  # Virtualenv python
+        if envdict['virtualenv'] == 'unsupported':
+            # Python 2.3 or earlier (or otherwise)
+            python = envdict['path']
+            envdir = os.path.dirname(os.path.dirname(python))
+        else:
+            envdir = os.path.join(venv_dir, envname)  # virtualenv dir
+            python = os.path.join(envdir, 'bin', envdict['execname'])  # Virtualenv python
 
         env_parameters = {
             'basepython': exepath,
@@ -197,10 +203,12 @@ def run_tests(args):
                 if envdict['virtualenv'] == 'internal':
                     # Internal means use the virtualenv for the relevant Python
                     setup_commands = [[exepath, '-m', 'virtualenv', '-v', envdir]]
-                else:
+                elif envdict['virtualenv'] == 'external':
                     # External means use the virtualenv for the current Python
                     setup_commands = [[sys.executable, '-m', 'virtualenv', '-v',
                                        '-p', exepath, envdir]]
+                else:
+                    setup_commands = [] # Do nothing.
             else:
                 setup_commands = [command.format(**env_parameters).split() for command in setup_commands]
 

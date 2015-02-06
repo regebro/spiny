@@ -208,6 +208,12 @@ def get_pythons(conf):
         if 'virtualenv' in pythons[env]:
             # We have already checked the virtualenv for this.
             continue
+
+        if pythons[env]['version'] < u'2.4':
+            # Python 2.3 and lower doesn't have virtualenv
+            pythons[env]['virtualenv'] = 'unsupported'
+            continue
+
         exepath = pythons[env]['path']
         if not has_virtualenv(exepath):
             # Something went wrong. Most likely there is no virtualenv module
