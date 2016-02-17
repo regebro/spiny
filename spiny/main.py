@@ -27,7 +27,6 @@ class Filter(object):
     def filter(self, record):
         return len(record.msg)
 
-
 class LevelFormatter(logging.Formatter):
     """Formatter with a format per level"""
     def __init__(self, fmt=None, datefmt=None, level_formats=None):
@@ -85,6 +84,10 @@ def run_all_tests(config):
     # Get the list of environments to be used:
     pythons = environment.get_pythons(config)
     envnames = environment.get_environments(config)
+    if not envnames:
+        print("You must specify which Python environments to run tests under, "
+              "either in setup.py or with the --envlist argument.")
+        sys.exit(1)
 
     # Get the setup commands:
     if config.has_option('spiny', 'setup-commands'):
@@ -236,6 +239,7 @@ def run_tests(args):
                 # Install dependencies:
                 pip_path = os.path.join(envdir, 'bin', 'pip')
                 parameters = '-f '.join(dependency_links).split()
+                parameters.append('-q')
                 if envdict['python'] == 'Python' and envdict['version'] < '2.6':
                     # Using 2.5 or worse means no SSL.
                     parameters.append('--insecure')
@@ -260,7 +264,7 @@ def run_tests(args):
                         logger.log(20, process.stdout.read())
 
             # Save the venv information:
-            with open(profile_path, 'wb') as profile:
+            with open(profile_path, 'wt') as profile:
                 profile.write(venv_profile)
 
         # Run tests:

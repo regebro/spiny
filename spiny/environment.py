@@ -29,7 +29,7 @@ def get_environments(conf):
                 if match[2]:
                     env = match[2].lower()
                 else:
-                    env = 'python' + match[0]
+                    env = 'python' + str(match[0].decode('ascii', 'ignore'))
                 environments.append(env)
 
     # If "Python X" is specified and "Python X.Y" is also specified, skip "Python X"
@@ -60,7 +60,7 @@ def python_info(fullpath, cache):
         else:
             version_string = stderr
 
-        version_info = version_string.strip().decode('ascii', errors='ignore')
+        version_info = version_string.strip().decode('ascii', 'ignore')
         parts = version_info.split()
         python = parts[0]
         version = parts[1]
@@ -237,7 +237,7 @@ def get_pythons(conf):
             os.mkdir(cache_dir)
 
         with open(cache_file, 'wb') as outfile:
-            cache = pickle.dump(cache, outfile)
+            cache = pickle.dump(cache, outfile, protocol=2)
     except OSError as e:
         logger.log(30, "Could not save Python info cache file %s" % cache_file, exc_info=1)
 

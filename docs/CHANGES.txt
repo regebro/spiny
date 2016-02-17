@@ -17,6 +17,11 @@ CHANGES
 - You can now run tests for Pythons that does not support any version
   of virtualenv, such as Python 2.3 and earlier.
 
+- Gives a nice error message and exits with -1 if it doesn't know what
+  versions to use.
+
+- Dropped support for running Spiny with Python 2.6.
+
 
 0.4 (2014-11-01)
 ----------------
