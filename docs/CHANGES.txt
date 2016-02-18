@@ -22,6 +22,8 @@ CHANGES
 
 - Dropped support for running Spiny with Python 2.6.
 
+- If using a system Python 3 the virtualenv would install system Python 2.
+
 
 0.4 (2014-11-01)
 ----------------

@@ -205,13 +205,17 @@ def run_tests(args):
             if not setup_commands:
                 if envdict['virtualenv'] == 'internal':
                     # Internal means use the virtualenv for the relevant Python
-                    setup_commands = [[exepath, '-m', 'virtualenv', '-v', envdir]]
+                    venvexe = exepath
                 elif envdict['virtualenv'] == 'external':
                     # External means use the virtualenv for the current Python
-                    setup_commands = [[sys.executable, '-m', 'virtualenv', '-v',
-                                       '-p', exepath, envdir]]
+                    venvexe = sys.executable
+                if envdict['virtualenv'] == 'unsupported':
+                    # No virtualenv
+                    setup_commands = [[]]
                 else:
-                    setup_commands = [] # Do nothing.
+                    setup_commands = [[venvexe, '-m', 'virtualenv', '-v',
+                                       '-p', exepath, envdir]]
+
             else:
                 setup_commands = [command.format(**env_parameters).split() for command in setup_commands]
 
