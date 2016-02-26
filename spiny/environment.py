@@ -206,7 +206,8 @@ def get_pythons(conf):
     env_list = get_environments(conf)
     for env in env_list:
         if env not in pythons:
-            raise EnvironmentError('Could not find an executable for %s' % env)
+            logger.log(40, 'ERROR: Could not find an executable for %s' % env)
+            continue
 
         if 'virtualenv' in pythons[env]:
             # We have already checked the virtualenv for this.

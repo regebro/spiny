@@ -37,12 +37,14 @@ class TestEnvironmentChecks(unittest.TestCase):
         conf.set('spiny', 'environments', 'python2 python3')
 
         with TestEnvironment(['python2']) as env:
-            self.assertRaises(EnvironmentError,
-                              environment.get_pythons,
-                              conf)
+            envs = environment.get_pythons(conf)
+            self.assertIn('python2', envs)
+            self.assertNotIn('python3', envs)
 
         with TestEnvironment(['python2', 'python3']) as env:
-            environment.get_pythons(conf)
+            envs = environment.get_pythons(conf)
+            self.assertIn('python2', envs)
+            self.assertIn('python3', envs)
 
     def test_custom_pythons(self):
         conf = make_conf()

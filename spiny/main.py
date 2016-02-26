@@ -138,6 +138,15 @@ def run_all_tests(config):
         cpus = min(cpus, max_proc)
     logger.log(20, "Using %s parallel processes" % cpus)
     pool = multiprocessing.Pool(processes=cpus)
+
+    executes = []
+    skips = []
+    for envname in envnames:
+        if envname in pythons:
+            executes.append(envname)
+        else:
+            skips.append(envname)
+
     argslist = [(envname,
                  pythons[envname],
                  venv_dir,
@@ -146,12 +155,15 @@ def run_all_tests(config):
                  requirements,
                  use_setup,
                  projectdir,
-                 curdir) for envname in envnames]
-    #results = pool.map(run_tests, argslist)
-    results = [run_tests(x) for x in argslist]
+                 curdir) for envname in executes]
 
-    return dict(zip(envnames, results))
+    results = pool.map(run_tests, argslist)
+    #results = [run_tests(x) for x in argslist]
+    results = dict(zip(executes, results))
+    for envname in skips:
+        results[envname] = 'Error: Skipped %s' % envname
 
+    return results
 
 def run_tests(args):
     try:

@@ -28,6 +28,9 @@ CHANGES
 - Spiny now supports having different requirements in setup.py for different
   versions of Python.
 
+- Not finding an executable for a specific environment is no longer a fatal
+  error, so you don't have to have all the supported versions installed.
+
 
 0.4 (2014-11-01)
 ----------------
