@@ -31,6 +31,10 @@ class FakeContext(object):
 
 class SetupMonkey(object):
 
+    def __init__(self, python_version=None):
+        self.python_version = python_version
+        self._old_python_version = None
+
     def distutils_setup_replacement(self, **kw):
         self._kw = kw
         self._kw['_setuptools'] = False
@@ -55,6 +59,13 @@ class SetupMonkey(object):
             self._setuptools_setup = None
 
         self._kw = {}
+
+        if self.python_version is not None:
+            self._old_python_version = sys.version, sys.version_info
+            sys.version = self.python_version
+            sys.version_info = tuple([int(v) for v in
+                                      self.python_version.split('.')])
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -63,6 +74,9 @@ class SetupMonkey(object):
         if self._setuptools_setup is not None:
             import setuptools
             setuptools.setup = self._setuptools_setup
+
+        if self._old_python_version is not None:
+            sys.version, sys.version_info = self._old_python_version
 
 
 def _specified_versions(data):
@@ -89,14 +103,14 @@ def _specified_versions(data):
                 continue
 
 
-def get_data(path):
+def get_data(path, python_version=None):
     """
     Returns data from a package directory.
     'path' should be an absolute path.
     """
     # Run the imported setup to get the metadata.
     with FakeContext(path):
-        with SetupMonkey() as sm:
+        with SetupMonkey(python_version) as sm:
             try:
                 import setup
                 metadata = sm.get_data()
@@ -127,3 +141,9 @@ def get_data(path):
             return {}
 
     return metadata
+
+if __name__ == '__main__':
+    import json
+    import sys
+    path = sys.argv[1]
+    print(json.dumps(get_data(path)))

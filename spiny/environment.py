@@ -28,6 +28,9 @@ def get_environments(conf):
             for match in PYTHON_TROVE_RE.findall(setuppy.read()):
                 if match[2]:
                     env = match[2].lower()
+                    if env == 'cpython':
+                        # That you support CPython is assumed, skip this.
+                        continue
                 else:
                     env = 'python' + str(match[0].decode('ascii', 'ignore'))
                 environments.append(env)
