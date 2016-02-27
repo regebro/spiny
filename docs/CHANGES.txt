@@ -6,6 +6,8 @@ CHANGES
 
 - Using /dev/null as stdin means the tests doesn't hang, but errors out.
 
+- No redirection of test output (or input) when only using one process.
+
 
 0.5 (2016-02-26)
 ----------------

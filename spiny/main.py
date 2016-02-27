@@ -138,10 +138,6 @@ def run_all_tests(config):
 
     projectdir = os.path.abspath(os.path.curdir)
 
-    cpus = min(multiprocessing.cpu_count(), len(envnames))
-    if max_proc:
-        cpus = min(cpus, max_proc)
-
     executes = []
     skips = []
     argslist = []
@@ -175,6 +171,10 @@ def run_all_tests(config):
         else:
             skips.append(envname)
 
+    cpus = min(multiprocessing.cpu_count(), len(executes))
+    if max_proc:
+        cpus = min(cpus, max_proc)
+
     all_reqs = [args[5] for args in argslist]
     for req in all_reqs:
         if req != all_reqs[0]:
@@ -186,6 +186,7 @@ def run_all_tests(config):
             break
 
     logger.log(20, "Using %s parallel processes" % cpus)
+    argslist = [args + (cpus > 1,) for args in argslist]
     pool = multiprocessing.Pool(processes=cpus)
     results = pool.map(run_tests, argslist)
     results = dict(zip(executes, results))
@@ -198,8 +199,13 @@ def run_all_tests(config):
 def run_tests(args):
     try:
         (envname, envdict, venv_dir, setup_commands, test_commands,
-         requirements, dependency_links, projectdir, curdir) = args
+         requirements, dependency_links, projectdir, curdir, parallel) = args
 
+        if parallel:
+            stdout = stderr = subprocess.PIPE
+        else:
+            # Don't redirect if only one process.
+            stdout = stderr = None
         exepath = envdict['path']  # Actual Python exe
         if envdict['virtualenv'] == 'unsupported':
             # Python 2.3 or earlier (or otherwise)
@@ -261,11 +267,12 @@ def run_tests(args):
 
                 logger.log(10, 'Using command: %s' % ' '.join(command))
                 with subprocess.Popen(command,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE) as process:
+                                      stdout=stdout,
+                                      stderr=stderr) as process:
                     process.wait()
-                    logger.log(30, process.stderr.read())
-                    logger.log(20, process.stdout.read())
+                    if parallel:
+                        logger.log(30, process.stderr.read())
+                        logger.log(20, process.stdout.read())
                     if process.returncode != 0:
                         # This failed somehow
                         msg = "Installing/updating virtualenv for %s failed!" % envname
@@ -285,16 +292,17 @@ def run_tests(args):
 
                 logger.log(10, 'Install dependencies with command: %s' % ' '.join(command))
                 with subprocess.Popen(command,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE) as process:
+                                      stdout=stdout,
+                                      stderr=stderr) as process:
                     process.wait()
                     logger.log(30, process.stderr.read())  # Log stderr only if verbose output.
                     if process.returncode != 0:
                         # This failed somehow.
                         msg = "Installing/updating dependencies for %s failed!" % envname
                         logger.log(30, msg)
-                        # pip has the error on stdout. Log it on normal level.
-                        logger.log(30, process.stdout.read())
+                        if parallel:
+                            # pip has the error on stdout. Log it on normal level.
+                            logger.log(30, process.stdout.read())
                         return msg
                     else:
                         # Log successful stdout only if output level is verbse.
@@ -311,13 +319,19 @@ def run_tests(args):
             command = command.strip().format(**env_parameters)
             logger.log(10, 'Using command: %s' % command)
             with open(null) as nullfile:
+                if parallel:
+                    stdin = nullfile
+                else:
+                    stdin = None  # Don't redirect if only one process.
                 with subprocess.Popen(command.split(),
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE,
-                                      stdin=nullfile) as process:
+                                      stdout=stdout,
+                                      stderr=stderr,
+                                      stdin=stdin) as process:
                     process.wait()
-                    logger.log(30, process.stderr.read())
-                    logger.log(30, process.stdout.read())
+                    if parallel:
+                        # Display the outputs
+                        logger.log(30, process.stderr.read())
+                        logger.log(30, process.stdout.read())
                     if process.returncode != 0:
                         msg = "Tests failed for %s!" % envname
                         return msg
