@@ -1,7 +1,7 @@
 CHANGES
 =======
 
-0.5 (unreleased)
+0.5 (2016-02-26)
 ----------------
 
 - CTRL-C will now kill the program.
