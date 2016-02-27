@@ -136,39 +136,64 @@ def run_all_tests(config):
     cpus = min(multiprocessing.cpu_count(), len(envnames))
     if max_proc:
         cpus = min(cpus, max_proc)
-    logger.log(20, "Using %s parallel processes" % cpus)
-    pool = multiprocessing.Pool(processes=cpus)
 
     executes = []
     skips = []
+    argslist = []
     for envname in envnames:
         if envname in pythons:
             executes.append(envname)
+
+            # Get requirements from setup.py
+            reqs = requirements[:]
+            if use_setup:
+                project_data = projectdata.get_data('.', pythons[envname]['version'])
+                reqs.extend(project_data.get('install_requires', []))
+                reqs.extend(project_data.get('setup_requires', []))
+                reqs.extend(project_data.get('tests_require', []))
+                reqs.extend(project_data.get('extras_require', {}).get('tests', []))
+                dependency_links = project_data.get('dependency_links', [])
+            else:
+                # Use of setup.py is disabled.
+                dependency_links = []
+
+            arguments = (envname,
+                         pythons[envname],
+                         venv_dir,
+                         setup_commands,
+                         test_commands,
+                         reqs,
+                         dependency_links,
+                         projectdir,
+                         curdir)
+            argslist.append(arguments)
         else:
             skips.append(envname)
 
-    argslist = [(envname,
-                 pythons[envname],
-                 venv_dir,
-                 setup_commands,
-                 test_commands,
-                 requirements,
-                 use_setup,
-                 projectdir,
-                 curdir) for envname in executes]
+    all_reqs = [args[5] for args in argslist]
+    for req in all_reqs:
+        if req != all_reqs[0]:
+            # There are different requirements for different versions.
+            # Then we can't run the tests in parallell.
+            cpus = 1
+            logger.log(30, "Version dependent requirements detected, "
+                           "not using parallelism.")
+            break
 
+    logger.log(20, "Using %s parallel processes" % cpus)
+    pool = multiprocessing.Pool(processes=cpus)
     results = pool.map(run_tests, argslist)
-    #results = [run_tests(x) for x in argslist]
     results = dict(zip(executes, results))
     for envname in skips:
         results[envname] = 'Error: Skipped %s' % envname
 
     return results
 
+
 def run_tests(args):
     try:
         (envname, envdict, venv_dir, setup_commands, test_commands,
-         requirements, use_setup, projectdir, curdir) = args
+         requirements, dependency_links, projectdir, curdir) = args
 
         exepath = envdict['path']  # Actual Python exe
         if envdict['virtualenv'] == 'unsupported':
@@ -192,21 +217,8 @@ def run_tests(args):
         else:
             curdir = projectdir
 
-        # Get requirements from setup.py
-        reqs = requirements[:]
-        if use_setup:
-            project_data = projectdata.get_data('.', envdict['version'])
-            reqs.extend(project_data.get('install_requires', []))
-            reqs.extend(project_data.get('setup_requires', []))
-            reqs.extend(project_data.get('tests_require', []))
-            reqs.extend(project_data.get('extras_require', {}).get('tests', []))
-            dependency_links = project_data.get('dependency_links', [])
-        else:
-            # Use of setup.py is disabled.
-            dependency_links = []
-
         # Create a "profile"" of this virtualenv, include name, the python exe and requirements.
-        venv_profile = '\n'.join([envname, exepath, '\n'.join(sorted(reqs))])
+        venv_profile = '\n'.join([envname, exepath, '\n'.join(sorted(requirements))])
         # Check if there is an existing venv, and in that case read in it's profile:
         profile_path = os.path.join(envdir, '.spiny-profile')
         if os.path.exists(profile_path):
@@ -255,7 +267,7 @@ def run_tests(args):
                         logger.log(30, msg)
                         return msg
 
-            if reqs:
+            if requirements:
                 # Install dependencies:
                 pip_path = os.path.join(envdir, 'bin', 'pip')
                 parameters = '-f '.join(dependency_links).split()
@@ -264,7 +276,7 @@ def run_tests(args):
                     # Using 2.5 or worse means no SSL.
                     parameters.append('--insecure')
 
-                command = [pip_path] + parameters + ['install'] + reqs
+                command = [pip_path] + parameters + ['install'] + requirements
 
                 logger.log(10, 'Install dependencies with command: %s' % ' '.join(command))
                 with subprocess.Popen(command,
