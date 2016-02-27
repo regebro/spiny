@@ -4,7 +4,7 @@ CHANGES
 0.6 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Using /dev/null as stdin means the tests doesn't hang, but errors out.
 
 
 0.5 (2016-02-26)

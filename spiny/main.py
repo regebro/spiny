@@ -14,6 +14,11 @@ else:
     import subprocess
     from configparser import ConfigParser
 
+if sys.platform == 'win32':
+    null = 'nul'
+else:
+    null = '/dev/null'
+
 from spiny import environment, projectdata
 
 __version__ = pkg_resources.require("spiny")[0].version
@@ -305,15 +310,17 @@ def run_tests(args):
         for command in test_commands:
             command = command.strip().format(**env_parameters)
             logger.log(10, 'Using command: %s' % command)
-            with subprocess.Popen(command.split(),
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE) as process:
-                process.wait()
-                logger.log(30, process.stderr.read())
-                logger.log(30, process.stdout.read())
-                if process.returncode != 0:
-                    msg = "Tests failed for %s!" % envname
-                    return msg
+            with open(null) as nullfile:
+                with subprocess.Popen(command.split(),
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE,
+                                      stdin=nullfile) as process:
+                    process.wait()
+                    logger.log(30, process.stderr.read())
+                    logger.log(30, process.stdout.read())
+                    if process.returncode != 0:
+                        msg = "Tests failed for %s!" % envname
+                        return msg
 
         return None
 
