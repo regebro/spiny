@@ -8,6 +8,8 @@ CHANGES
 
 - No redirection of test output (or input) when only using one process.
 
+- It's not a library, so supporting Python 2 isn't needed.
+
 
 0.5 (2016-02-26)
 ----------------
