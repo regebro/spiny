@@ -10,7 +10,7 @@ long_desc = readme + '\n\n' + changes
 
 setup(
     name='spiny',
-    version='0.6',
+    version='0.7.dev0',
     description='''Spiny will run your Python tests under multiple versions of Python''',
     long_description=long_desc,
     keywords=['development', 'tools', 'testing'],
