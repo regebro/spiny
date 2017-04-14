@@ -6,7 +6,8 @@ python:
   - "3.5"
   - "3.6"
   - "nightly"
-# command to run tests
+before_install:
+ - pip2.7 install virtualenv
+ - pip install virtualenv
 install: python setup.py develop
 script: python setup.py test
-
