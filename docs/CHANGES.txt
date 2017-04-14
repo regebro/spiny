@@ -1,12 +1,20 @@
 CHANGES
 =======
 
-0.6 (unreleased)
+0.7 (unreleased)
+----------------
+
+- Nothing changed yet.
+
+
+0.6 (2017-04-12)
 ----------------
 
 - Using /dev/null as stdin means the tests doesn't hang, but errors out.
 
 - No redirection of test output (or input) when only using one process.
+
+- It's not a library, so supporting Python 2 isn't needed.
 
 
 0.5 (2016-02-26)

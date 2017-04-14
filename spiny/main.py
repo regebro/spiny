@@ -70,7 +70,7 @@ def setup_logging(verbose, quiet):
     handler = logging.StreamHandler()
     handler.addFilter(Filter())
     formats = {30: '%(message)s', 40: '%(message)s'}
-    handler.setFormatter(LevelFormatter('%(levelname)s:\n%(message)s',
+    handler.setFormatter(LevelFormatter('%(message)s',
                                         level_formats=formats))
     logger.setLevel(level)
     logger.addHandler(handler)
@@ -295,7 +295,8 @@ def run_tests(args):
                                       stdout=stdout,
                                       stderr=stderr) as process:
                     process.wait()
-                    logger.log(30, process.stderr.read())  # Log stderr only if verbose output.
+                    if parallel:
+                        logger.log(30, process.stderr.read())  # Log stderr only if verbose output.
                     if process.returncode != 0:
                         # This failed somehow.
                         msg = "Installing/updating dependencies for %s failed!" % envname
@@ -304,7 +305,7 @@ def run_tests(args):
                             # pip has the error on stdout. Log it on normal level.
                             logger.log(30, process.stdout.read())
                         return msg
-                    else:
+                    elif parallel:
                         # Log successful stdout only if output level is verbse.
                         logger.log(20, process.stdout.read())
 
@@ -330,8 +331,8 @@ def run_tests(args):
                     process.wait()
                     if parallel:
                         # Display the outputs
-                        logger.log(30, process.stderr.read())
-                        logger.log(30, process.stdout.read())
+                        logger.log(30, process.stderr.read().decode())
+                        logger.log(30, process.stdout.read().decode())
                     if process.returncode != 0:
                         msg = "Tests failed for %s!" % envname
                         return msg
@@ -440,3 +441,7 @@ def run(config_file, overrides):
             logger.log(40, "       Running tests under %s suceeded." % env)
 
     return 1 if any(results.values()) else 0
+
+
+if __name__ == '__main__':
+    main()

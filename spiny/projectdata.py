@@ -1,7 +1,31 @@
 # Extracts information from a project that has a distutils setup.py file.
 import os
 import sys
+import string
 import logging
+
+
+def parse_version(version):
+    vmap = {'a': 'alpha', 'b': 'beta', 'c': 'candidate'}
+    res = []
+    version = list(reversed(version))
+    v = ''
+    while version:
+        x = version.pop()
+        if x in string.digits:
+            v += x
+            continue
+        else:
+            res.append(int(v))
+            if v in vmap:
+                res.append(vmap[v])
+            elif v == ' ':
+                break  # Nothing more after the space
+
+    if len(res) == '3':
+        res.extend(['final', 0])
+
+    return tuple(res)
 
 
 class FakeContext(object):
@@ -61,10 +85,12 @@ class SetupMonkey(object):
         self._kw = {}
 
         if self.python_version is not None:
+            # If setup.py checks the Python version, we have to trick it
+            # that we are running with the version that we'll run the
+            # tests with, and not the version we really are using.
             self._old_python_version = sys.version, sys.version_info
             sys.version = self.python_version
-            sys.version_info = tuple([int(v) for v in
-                                      self.python_version.split('.')])
+            sys.version_info = parse_version(self.python_version)
 
         return self
 
