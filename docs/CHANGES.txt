@@ -4,7 +4,7 @@ CHANGES
 0.7 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fixed a bug on Python pre-release versions.
 
 
 0.6 (2017-04-12)
