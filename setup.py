@@ -24,6 +24,7 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Topic :: Software Development :: Testing",
+        "License :: OSI Approved :: MIT License",
         ],
     packages=find_packages(),
     include_package_data=True,
