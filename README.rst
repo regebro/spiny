@@ -1,3 +1,9 @@
+Spiny has been abandoned! Don't use it!
+
+I used it to test my packages under all supported Python versions, 
+before commiting changes. Now I use continous integration instead, to
+test everything after commiting changes. It's not as greate, but less work for me.
+
 Spiny
 =====
 
